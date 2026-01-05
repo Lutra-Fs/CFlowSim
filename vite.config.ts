@@ -75,6 +75,10 @@ export default defineConfig({
     copyOnnxWasmFiles(),
     wasmMiddleware(),
   ],
+  // Define global constants for dead code elimination
+  define: {
+    __DEV__: JSON.stringify(process.env.NODE_ENV !== 'production'),
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
@@ -89,6 +93,13 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        dead_code: true,
+        drop_console: true,
+      },
+    },
   },
   // Ensure WASM files are treated as assets and served with correct MIME type
   assetsInclude: ['**/*.wasm'],

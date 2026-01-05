@@ -1,8 +1,19 @@
 import * as ort from 'onnxruntime-web/webgpu'
 import type { Vector2 } from 'three'
 import type { ModelService } from './modelService'
+import { createLogger } from '@/utils/logger'
+import { RegressionMonitor } from '@/services/regression/regressionMonitor'
+
+// Use a const that gets replaced by Vite at build time
+declare const __DEV__: boolean
+const IS_DEV: boolean = __DEV__
+
+const logger = createLogger('ONNXService')
 
 export default class ONNXService implements ModelService {
+  private logger = logger
+  private monitor = IS_DEV ? new RegressionMonitor() : (null as unknown as RegressionMonitor)
+  private frameNumber = 0
   session: ort.InferenceSession | null
   gridSize: [number, number]
   batchSize: number
@@ -52,7 +63,7 @@ export default class ONNXService implements ModelService {
     fpsLimit = 15,
     backend = 'wasm',
   ): Promise<ONNXService> {
-    console.log('createModelService called')
+    logger.debug('Creating ONNX model service')
     const modelServices = new ONNXService()
     await modelServices.init(
       modelPath,
@@ -63,7 +74,7 @@ export default class ONNXService implements ModelService {
       backend,
     )
     modelServices.fpsLimit = fpsLimit
-    console.log('createModelService finished')
+    logger.debug('ONNX model service created')
     return modelServices
   }
 
@@ -101,9 +112,9 @@ export default class ONNXService implements ModelService {
     outputChannelSize: number,
     backend: string,
   ): Promise<void> {
-    console.log('init called')
+    this.logger.debug('Initializing ONNX session')
     const metaUrl = new URL(import.meta.url)
-    console.log('metaUrl', metaUrl)
+    this.logger.debug('Meta URL', { metaUrl: metaUrl.href })
     // Configure WASM paths for onnxruntime-web
     // In dev: use node_modules path directly
     // In prod: use assets path where files are copied during build
@@ -119,7 +130,7 @@ export default class ONNXService implements ModelService {
       executionProviders: [backend],
       graphOptimizationLevel: 'all',
     })
-    console.log('init session created')
+    this.logger.debug('ONNX session created')
     this.channelSize = channelSize
     this.outputChannelSize = outputChannelSize
     this.gridSize = gridSize
@@ -130,10 +141,7 @@ export default class ONNXService implements ModelService {
   }
 
   loadDataArray(data: number[][][][]): void {
-    console.log(
-      '🚀 ~ file: modelService.ts:132 ~ ModelService ~  initMatrixFromJSON ~ data:',
-      data,
-    )
+    this.logger.debug('Loading data array', { shape: `${data.length}x${data[0]?.length}x${data[0]?.[0]?.length}x${data[0]?.[0]?.[0]?.length}` })
     this.matrixArray = new Float32Array(data.flat(3))
     this.normalizeMatrix(this.matrixArray)
     if (this.matrixArray.length !== this.tensorSize) {
@@ -153,8 +161,7 @@ export default class ONNXService implements ModelService {
         'session is null, createModelServices() must be called at first',
       )
     }
-    console.log('iterate called')
-    console.log('this.matrixArray', this.matrixArray)
+    this.logger.debug('Starting simulation iteration')
     const inputEnergy = this.matrixSum(
       this.matrixArray,
       [1, 5],
@@ -167,7 +174,7 @@ export default class ONNXService implements ModelService {
     )
     const feeds: Record<string, ort.Tensor> = {}
     feeds[this.session.inputNames[0]] = inputTensor
-    console.log(feeds)
+    const startTime = performance.now()
     this.session
       .run(feeds)
       .then(outputs => {
@@ -183,20 +190,35 @@ export default class ONNXService implements ModelService {
           outputs[this.session!.outputNames[0]].data as Float32Array,
           inputEnergy,
         )
+
+        // Regression monitoring (dev only)
+        if (IS_DEV) {
+          const inferenceTime = performance.now() - startTime
+
+          // Extract density and velocity from output (format: [d0, vx0, vy0, d1, vx1, vy1, ...])
+          const n = outputData.length / 3
+          const density = new Float32Array(n)
+          const velocityX = new Float32Array(n)
+          const velocityY = new Float32Array(n)
+
+          for (let i = 0; i < n; i++) {
+            density[i] = outputData[i * 3]
+            velocityX[i] = outputData[i * 3 + 1]
+            velocityY[i] = outputData[i * 3 + 2]
+          }
+
+          this.frameNumber++
+          this.monitor.monitorFrame(density, velocityX, velocityY, inferenceTime, this.logger)
+        }
+
         this.outputCallback(outputData)
         this.curFrameCountbyLastSecond++
-        console.log('curFrameCountbyLastSecond', this.curFrameCountbyLastSecond)
         this.copyOutputToMatrix(outputData)
         setTimeout(() => {
           if (!this.isPaused) {
             if (this.curFrameCountbyLastSecond > this.fpsLimit) {
               this.isPaused = true
-              console.log(
-                'fps limit reached, pause simulation, fpsLimit:',
-                this.fpsLimit,
-                'curFrameCountbyLastSecond:',
-                this.curFrameCountbyLastSecond,
-              )
+              this.logger.debug('FPS limit reached', { fpsLimit: this.fpsLimit, frameCount: this.curFrameCountbyLastSecond })
             } else {
               this.iterate()
             }
@@ -204,13 +226,13 @@ export default class ONNXService implements ModelService {
         })
       })
       .catch(e => {
-        console.error('error in session.run', e)
+        this.logger.error('Inference failed', { error: e instanceof Error ? e.message : String(e) })
         this.isPaused = true
       })
   }
 
   private normalizeMatrix(matrix: Float32Array): void {
-    console.log('normalizeMatrix called')
+    this.logger.debug('Normalizing matrix channels')
     for (let i = 0; i < this.channelSize; i++) {
       matrix = this.normalizeMatrixChannel(matrix, i)
     }
@@ -236,7 +258,7 @@ export default class ONNXService implements ModelService {
       ),
       4,
     )
-    console.log('normalizeMatrixChannel', channel, mean, std)
+    this.logger.debug('Normalized channel', { channel, mean, std })
     return this.matrixMap(
       matrix,
       [channel, channel + 1],
@@ -258,14 +280,7 @@ export default class ONNXService implements ModelService {
     data = this.matrixMap(data, [0, 1], value => Math.max(value, 0), true)
     const sum = this.matrixSum(data, [0, 1], value => value, true)
     const scale = this.mass / sum
-    console.log(
-      'Scaling density, cur mass:',
-      sum,
-      'target mass:',
-      this.mass,
-      'scale:',
-      scale,
-    )
+    this.logger.debug('Scaling density', { currentMass: sum, targetMass: this.mass, scale })
     return this.matrixMap(data, [0, 1], value => value * scale, true)
   }
 
@@ -275,14 +290,7 @@ export default class ONNXService implements ModelService {
   ): Float32Array {
     const curEnergy = this.matrixSum(data, [1, 3], value => value ** 2, true)
     const scale = this.roundFloat(Math.sqrt(inputEnergy / curEnergy), 4)
-    console.log(
-      'Scaling velocity, cur energy:',
-      curEnergy,
-      'target energy:',
-      inputEnergy,
-      'scale:',
-      scale,
-    )
+    this.logger.debug('Scaling velocity', { currentEnergy: curEnergy, targetEnergy: inputEnergy, scale })
     if (scale >= 1) return data
     return this.matrixMap(data, [1, 3], value => value * scale, true)
   }

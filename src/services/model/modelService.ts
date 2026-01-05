@@ -2,6 +2,9 @@ import type { Vector2 } from 'three'
 import MockModelService from './MockModelService'
 import ONNXService from './ONNXService'
 import { TfjsService } from './TfjsService'
+import { createLogger } from '@/utils/logger'
+
+const logger = createLogger('modelService')
 
 export interface ModelService {
   startSimulation: () => void
@@ -26,17 +29,17 @@ export async function createModelService(
   fpsLimit = 15,
 ): Promise<ModelService> {
   // deal with internal paths
-  console.log(modelPath)
+  logger.debug('Initial model path', { modelPath })
 
   if (modelPath.startsWith('/model/')) {
     modelPath = new URL(modelPath, import.meta.url).href
   }
-  console.log(modelPath)
+  logger.debug('Resolved model path', { modelPath })
 
   // detect the model type
   // TODO: read the model type from the model definition file
   const modelType = modelPath.split('.').pop()
-  console.log(modelType)
+  logger.debug('Model type detected', { modelType })
   switch (modelType) {
     case 'json':
       return await TfjsService.createService(

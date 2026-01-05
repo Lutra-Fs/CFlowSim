@@ -3,6 +3,9 @@
 
 import { type IDBPDatabase, openDB } from 'idb'
 import type { ModelSave } from '../model/modelService'
+import { createLogger } from '@/utils/logger'
+
+const logger = createLogger('autoSaveService')
 
 export default class AutoSaveService {
   saveInterval: number
@@ -46,10 +49,7 @@ export default class AutoSaveService {
     const autoSave = async (): Promise<void> => {
       try {
         const serialisationData = this.getModelSerialized()
-        console.log(
-          '🚀 ~ file: autoSaveService.ts:51 ~ AutoSaveService ~ this.intervalObj=setInterval ~ serialisationData:',
-          serialisationData,
-        )
+        logger.debug('Auto-saving model state', { time: serialisationData.time })
         // Save the model to the database
         await this.db.add('modelSave', serialisationData)
         // Check if the total count exceeds maxAutoSaves
@@ -57,28 +57,25 @@ export default class AutoSaveService {
         if (count > this.maxAutoSaves) {
           // Get the earliest model according to the time (index)
           const earliestModel = await this.db.getAllKeys('modelSave', null, 10)
-          console.log(
-            '🚀 ~ file: autoSaveService.ts:63 ~ AutoSaveService ~ this.intervalObj=setInterval ~ earliestModel:',
-            earliestModel,
-          )
+          logger.debug('Deleting earliest auto-save', { key: earliestModel[0] })
           // Delete the earliest model
           await this.db.delete('modelSave', earliestModel[0])
         }
       } catch (error) {
-        console.error(error)
+        logger.error('Auto-save failed', { error: error instanceof Error ? error.message : String(error) })
       }
     }
 
     this.intervalObj = setInterval(() => {
       autoSave().catch(error => {
-        console.error(error)
+        logger.error('Auto-save interval error', { error: error instanceof Error ? error.message : String(error) })
       })
     }, this.saveInterval)
   }
 
   pauseAutoSave(): void {
     setTimeout(() => {
-      console.log('pausing auto save')
+      logger.debug('Pausing auto save')
       clearInterval(this.intervalObj)
       this.intervalObj = undefined
     }, 0)

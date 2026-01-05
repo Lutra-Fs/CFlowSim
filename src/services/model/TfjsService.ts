@@ -2,8 +2,17 @@ import * as tf from '@tensorflow/tfjs'
 import type { Vector2 } from 'three'
 import type { ModelService } from './modelService'
 import '@tensorflow/tfjs-backend-webgpu'
+import { createLogger } from '@/utils/logger'
+import { RegressionMonitor } from '@/services/regression/regressionMonitor'
+
+// Use a const that gets replaced by Vite at build time
+declare const __DEV__: boolean
+const IS_DEV: boolean = __DEV__
 
 export class TfjsService implements ModelService {
+  private logger = createLogger('TfjsService')
+  private monitor = IS_DEV ? new RegressionMonitor() : (null as unknown as RegressionMonitor)
+  private frameNumber = 0
   model!: tf.GraphModel
   gridSize: [number, number]
   batchSize: number
@@ -55,7 +64,7 @@ export class TfjsService implements ModelService {
   }
 
   loadDataArray(array: number[][][][]): void {
-    console.log(array)
+    this.logger.debug('Loading data array', { shape: `${array.length}x${array[0]?.length}x${array[0]?.[0]?.length}x${array[0]?.[0]?.[0]?.length}` })
     const arrayTensor = tf.tensor4d(
       array,
       [this.batchSize, ...this.gridSize, this.channelSize],
@@ -106,7 +115,7 @@ export class TfjsService implements ModelService {
     normalizedPressureX.dispose()
     this.density.assign(this.density.maximum(0))
     this.mass = this.density.sum()
-    this.mass.print()
+    this.logger.debug('Mass calculated', { mass: this.mass.dataSync()[0] })
   }
 
   static normalizeTensor(tensor: tf.Tensor): tf.Tensor {
@@ -155,6 +164,7 @@ export class TfjsService implements ModelService {
     }
     this.curFrameCountbyLastSecond += 1
     const input = this.getInput()
+    const startTime = performance.now()
     const energy = this.velocity.square().sum()
     // const output = this.model?.predict(input);
     void this.model?.predictAsync(input).then(a => {
@@ -175,24 +185,51 @@ export class TfjsService implements ModelService {
       // update density, velocity
       const newEnergy = this.velocity.square().sum()
       const energyScale = energy.div(newEnergy)
-      energyScale.print()
+      const energyValue = energyScale.dataSync()[0]
+      this.logger.debug('Energy scale', { energyScale: energyValue })
 
       this.velocity.assign(this.velocity.mul(energyScale.sqrt()))
       const newMass = this.density.sum()
       const massScale = this.mass.div(newMass)
       this.density.assign(this.density.mul(massScale))
-      massScale.print()
+      const massValue = massScale.dataSync()[0]
+      this.logger.debug('Mass scale', { massScale: massValue })
       newMass.dispose()
       newEnergy.dispose()
       energy.dispose()
       energyScale.dispose()
+
+      // Regression monitoring (dev only)
+      if (IS_DEV) {
+        const inferenceTime = performance.now() - startTime
+
+        // Extract density and velocity as Float32Array
+        const densityData = this.density.dataSync() as Float32Array
+        const velocityData = this.velocity.dataSync() as Float32Array
+
+        // Velocity is stored as [vx, vy] interleaved, need to separate
+        const n = densityData.length / 2 // velocity has 2 channels per cell
+        const velocityX = new Float32Array(n)
+        const velocityY = new Float32Array(n)
+
+        for (let i = 0; i < n; i++) {
+          velocityX[i] = velocityData[i * 2]
+          velocityY[i] = velocityData[i * 2 + 1]
+        }
+
+        // Use only first n/2 density values to match velocity size
+        const density = densityData.slice(0, n)
+
+        this.frameNumber++
+        this.monitor.monitorFrame(density, velocityX, velocityY, inferenceTime, this.logger)
+      }
 
       this.outputCallback(output?.dataSync() as Float32Array)
       output.dispose()
       // set timeout to 0 to allow other tasks to run, like pause and apply force
       setTimeout(() => {
         this.curFrameCountbyLastSecond += 1
-        console.log(this.curFrameCountbyLastSecond)
+        this.logger.debug('Frame count', { count: this.curFrameCountbyLastSecond })
         this.iterate()
       }, 0)
     })

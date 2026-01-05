@@ -15,6 +15,9 @@ import {
   RunnerFunc,
   type UpdateForceArgs,
 } from './modelWorkerMessage'
+import { createLogger } from '../utils/logger'
+
+const logger = createLogger('modelWorker')
 
 let modelService: ModelService | null = null
 let autoSaveService: AutoSaveService | null = null
@@ -56,7 +59,7 @@ export function onmessage(
   if (data == null) {
     throw new Error('data is null')
   }
-  console.log('worker received message', data)
+  logger.debug('Worker received message', { func: data.func })
   switch (data.func) {
     case RunnerFunc.INIT:
       if (modelService == null) {
@@ -71,7 +74,7 @@ export function onmessage(
             this.postMessage({ type: 'init', success: true })
           })
           .catch(e => {
-            console.error('error in createNewModelService', e)
+            logger.error('Service initialization failed', { error: e instanceof Error ? e.message : String(e) })
           })
       }
       break
@@ -130,7 +133,7 @@ export function onmessage(
       getServiceFromSave(this, possibleSave)
         .then(ms => {
           modelService = ms
-          console.log('successfully restored model service with', ms)
+          logger.debug('Model service restored successfully')
           this.postMessage({ type: 'deserialize', success: true })
         })
         .catch(e => {
@@ -167,7 +170,7 @@ async function getServiceFromSave(
   event: DedicatedWorkerGlobalScope,
   save: ModelSave,
 ): Promise<ModelService> {
-  console.log('restoring model service from', save)
+  logger.debug('Restoring model service from save')
   const modelService = await createModelService(save.modelUrl, [64, 64], 1)
   modelUrl = save.modelUrl
   bindCallback(event, modelService)
@@ -214,7 +217,7 @@ function bindCallback(
 ): void {
   const cache: Float32Array[] = []
   const outputCallback = (output: Float32Array): void => {
-    console.log('outputCallback', output)
+    logger.debug('Output callback received', { size: output.length })
     const density = new Float32Array(output.length / 3)
     for (let i = 0; i < density.length; i++) {
       density[i] = output[i * 3]
@@ -222,7 +225,7 @@ function bindCallback(
     cache.push(density)
   }
   setInterval(() => {
-    console.log('cache', cache)
+    logger.debug('Cache state', { cachedFrames: cache.length })
     if (cache.length > 0) {
       event.postMessage({ type: 'output', density: cache })
       cache.splice(0, cache.length)
