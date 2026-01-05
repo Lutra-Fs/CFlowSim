@@ -1,10 +1,11 @@
+import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { useEffect, useMemo, useState } from 'react'
 import ControlBar from '../components/ControlBar'
 import ParBar from '../components/ParametersBar'
 import RestorePopup from '../components/RestoreComponents/RestorePopUp'
 import { DiffusionPlane, type SimulationParams } from '../components/Simulation'
-import WebGPUCanvas from '../components/WebGPUCanvas'
+import { WebGPUSimulation } from '../components/WebGPUSimulation'
 import type { ModelSave } from '../services/model/modelService'
 import {
   type IncomingMessage,
@@ -82,25 +83,37 @@ export default function Home(props: IndexProp): JSX.Element {
     <>
       <ParBar params={simulationParams} setParams={setSimulationParams} />
       <div className="relative left-[21rem] top-4 w-[calc(100%-22rem)] h-[calc(100%-7rem)] z-0 max-[760px]:left-[6rem] max-[760px]:top-[6rem] max-[760px]:w-[calc(100vw-12rem)] max-[760px]:h-[calc(100vh-6rem)]">
-        <WebGPUCanvas
-          shadows
-          camera={{
-            position: [1, 10, 1],
-          }}
-        >
-          <ambientLight />
-          <OrbitControls
-            target={[0, 0, 0]}
-            enabled={simulationParams.isCameraControlMode}
-          ></OrbitControls>
-          <DiffusionPlane
+        {simulationParams.rendererBackend === 'webgpu' ? (
+          // WebGPU rendering (native)
+          <WebGPUSimulation
             disableInteraction={simulationParams.isCameraControlMode}
-            position={[0, 0, 0]}
             params={simulationParams}
             worker={worker}
             outputSubs={outputSubs}
           />
-        </WebGPUCanvas>
+        ) : (
+          // WebGL rendering (Three.js)
+          <Canvas
+            shadows
+            camera={{
+              position: [0, 10, 0],
+              fov: 75,
+            }}
+          >
+            <ambientLight />
+            <OrbitControls
+              target={[0, 0, 0]}
+              enabled={simulationParams.isCameraControlMode}
+            />
+            <DiffusionPlane
+              disableInteraction={simulationParams.isCameraControlMode}
+              position={[0, 0, 0]}
+              params={simulationParams}
+              worker={worker}
+              outputSubs={outputSubs}
+            />
+          </Canvas>
+        )}
       </div>
       {restorePopupVisible && (
         <RestorePopup

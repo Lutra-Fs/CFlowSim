@@ -5,9 +5,8 @@ import {
 } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as t from 'three'
-import fragmentShader from '../shaders/frag.glsl'
-import vertexShader from '../shaders/vert.glsl'
-import vertexShaderForHeightMap from '../shaders/vert_height.glsl'
+import vertexShader from '../shaders/glsl/vertex.glsl'
+import fragmentShader from '../shaders/glsl/fragment.glsl'
 import {
   RunnerFunc,
   type UpdateForceArgs,
@@ -20,6 +19,9 @@ class SimulationParams {
 
   renderHeightMap: boolean = false
   isCameraControlMode: boolean = false
+
+  // renderer backend: 'webgl' | 'webgpu'
+  rendererBackend: 'webgl' | 'webgpu' = 'webgl'
 }
 
 // we will store the parameters in an interface explicitly so
@@ -29,29 +31,6 @@ interface Renderable {
   outputSubs: Array<(density: Float32Array[]) => void>
   worker: Worker
   disableInteraction: boolean
-}
-
-// TODO: move the rest of renderConfig to SimulationParams
-const renderConfig: Record<string, string> = {
-  segX: '31.0',
-  segY: '31.0',
-  width: '10.0',
-  height: '8.0',
-  segXInt: '32',
-  segArea: '1024',
-  densityRangeLow: '0.0',
-  densityRangeHigh: '10.0',
-  densityRangeSize: '10.0',
-}
-
-function applyConfigToShader(shader: string): string {
-  // match `${varName}` in shader and replace with values
-  return shader.replace(/\$\{(\w+?)\}/g, (_match: unknown, varName: string) => {
-    if (renderConfig[varName] !== undefined) {
-      return renderConfig[varName]
-    }
-    return '1.0'
-  })
 }
 
 // converts a colour to vector3, does not preserve alpha
@@ -65,29 +44,39 @@ function DiffusionPlane(
   // reference to the parent mesh
   const ref = useRef<t.Mesh>(null!)
 
+  // create geometry based on render mode
+  const geometry = useMemo(() => {
+    if (props.params.renderHeightMap) {
+      return new t.PlaneGeometry(10, 8, 31, 31)  // height map: 1024 vertices
+    } else {
+      return new t.PlaneGeometry(10, 8, 1, 1)    // flat: 4 vertices
+    }
+  }, [props.params.renderHeightMap])
+
   // create the shader
   const shaderMat = useMemo(() => {
     const shaderMat = new t.ShaderMaterial()
-    if (props.params.renderHeightMap) {
-      shaderMat.vertexShader = applyConfigToShader(
-        vertexShaderForHeightMap as string,
-      )
-    } else {
-      shaderMat.vertexShader = applyConfigToShader(vertexShader as string)
-    }
-    shaderMat.fragmentShader = applyConfigToShader(fragmentShader as string)
+
+    // Use the new refactored shaders
+    shaderMat.vertexShader = vertexShader as string
+    shaderMat.fragmentShader = fragmentShader as string
     shaderMat.side = t.DoubleSide
 
-    // TODO: until we standardise parameters a bit more we'll hardcode
-    // an advection size of 32*32
+    // Initial density texture (will be updated with real data)
     const initDensity = new Float32Array(new Array(64 * 64).fill(0))
     const tex = new t.DataTexture(initDensity, 64, 64, t.RedFormat, t.FloatType)
+    tex.minFilter = t.LinearFilter
+    tex.magFilter = t.LinearFilter
+    tex.wrapS = t.ClampToEdgeWrapping
+    tex.wrapT = t.ClampToEdgeWrapping
     tex.needsUpdate = true
 
+    // Standard uniforms
     shaderMat.uniforms = {
       density: { value: tex },
-      hiCol: { value: colToVec3(props.params.densityHighColour) },
-      lowCol: { value: colToVec3(props.params.densityLowColour) },
+      uHeightScale: { value: props.params.renderHeightMap ? 1.0 : 0.0 },
+      uLowColor: { value: colToVec3(props.params.densityLowColour) },
+      uHighColor: { value: colToVec3(props.params.densityHighColour) },
     }
 
     return shaderMat
@@ -110,11 +99,22 @@ function DiffusionPlane(
   // create a worker and assign it the model computations
   const { outputSubs, worker } = props
 
+  // Use a ref to track current material, avoiding stale closure issues
+  const materialRef = useRef<t.ShaderMaterial>(shaderMat)
+
+  // Update ref when shaderMat changes
+  useEffect(() => {
+    materialRef.current = shaderMat
+  }, [shaderMat])
+
   useEffect(() => {
     console.log('[renderer] [event] Creating worker')
     outputSubs.push((density: Float32Array[]) => {
       output(density)
     })
+
+    // Store all interval IDs for cleanup
+    const intervals: NodeJS.Timeout[] = []
 
     // SUBSCRIPTIONS
     // update the density uniforms every time
@@ -122,24 +122,29 @@ function DiffusionPlane(
     function output(data: Float32Array[]): void {
       // create a copy to prevent modifying original data
       data = data.slice(0)
-      const param: Record<string, number> = {
-        densityRangeHigh: parseFloat(renderConfig.densityRangeHigh),
-        densityRangeLow: parseFloat(renderConfig.densityRangeLow),
-        densityRangeSize: parseFloat(renderConfig.densityRangeSize),
-      }
+
+      // Normalization parameters
+      const densityRangeHigh = 10.0
+      const densityRangeLow = 0.0
+      const densityRangeSize = 10.0
 
       function updateTexture(data: Float32Array): void {
         // texture float value is required to be in range [0.0, 1.0],
         // so we have to convert this in js
         for (let i = 0; i < data.length; i++) {
-          let density = Math.min(data[i], param.densityRangeHigh)
-          density = Math.max(density, param.densityRangeLow)
-          density = density / param.densityRangeSize
+          let density = Math.min(data[i], densityRangeHigh)
+          density = Math.max(density, densityRangeLow)
+          density = density / densityRangeSize
           data[i] = density
         }
         const tex = new t.DataTexture(data, 64, 64, t.RedFormat, t.FloatType)
+        tex.minFilter = t.LinearFilter
+        tex.magFilter = t.LinearFilter
+        tex.wrapS = t.ClampToEdgeWrapping
+        tex.wrapT = t.ClampToEdgeWrapping
         tex.needsUpdate = true
-        shaderMat.uniforms.density.value = tex
+        // Use ref to always get the current material
+        materialRef.current.uniforms.density.value = tex
       }
       // calculate the fps
       console.log(`[renderer] [event] Received output, fps: ${data.length}`)
@@ -180,7 +185,7 @@ function DiffusionPlane(
         )
         let i = 0
         // start the interpolation
-        setInterval(
+        const intervalId = setInterval(
           () => {
             if (i >= interpData.length) return
             updateTexture(interpData[i])
@@ -188,16 +193,23 @@ function DiffusionPlane(
           },
           1000 / (data.length * interpMul),
         )
+        intervals.push(intervalId)
       } else {
         let i = 0
-        setInterval(() => {
+        const intervalId = setInterval(() => {
           if (i >= data.length) return
           updateTexture(data[i])
           i++
         }, 1000 / data.length)
+        intervals.push(intervalId)
       }
     }
-  }, [outputSubs, shaderMat.uniforms.density])
+
+    // Cleanup function: clear all intervals when effect reruns or unmounts
+    return () => {
+      intervals.forEach(clearInterval)
+    }
+  }, [outputSubs])
 
   const { disableInteraction } = props
   let pointMoved = false
@@ -256,7 +268,7 @@ function DiffusionPlane(
       onPointerDown={pointDown}
       onPointerMove={pointMove}
     >
-      <planeGeometry args={[10, 8, 31, 31]} />
+      <primitive object={geometry} attach="geometry" />
     </mesh>
   )
 }

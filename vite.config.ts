@@ -65,7 +65,9 @@ function wasmMiddleware(): Plugin {
 export default defineConfig({
   plugins: [
     react(),
-    glsl(),
+    glsl({
+      include: ['**/*.glsl', '**/*.wgsl'],
+    }),
     mdPlugin({
       mode: [Mode.REACT],
     }),

@@ -151,6 +151,27 @@ export default function ParametersBar(props: {
             />
           </div>
         </div>
+        <div className="gap-4">
+          <ParameterLabel title="Renderer Backend"></ParameterLabel>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <ParameterButton
+              label={props.params.rendererBackend === 'webgl' ? 'WebGL ✓' : 'WebGL'}
+              onClick={() => {
+                setParams(prev => ({ ...prev, rendererBackend: 'webgl' }))
+              }}
+            />
+          </div>
+          <div>
+            <ParameterButton
+              label={props.params.rendererBackend === 'webgpu' ? 'WebGPU ✓' : 'WebGPU'}
+              onClick={() => {
+                setParams(prev => ({ ...prev, rendererBackend: 'webgpu' }))
+              }}
+            />
+          </div>
+        </div>
         <div className="gap-4" style={renderHeightMap ? {} : { display: 'none' }}>
           <ParameterLabel title="Current Control"></ParameterLabel>
         </div>
