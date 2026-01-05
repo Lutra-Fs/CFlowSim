@@ -1,11 +1,11 @@
 import { OrbitControls } from '@react-three/drei'
-import { Canvas } from '@react-three/fiber'
 import { useEffect, useMemo, useState } from 'react'
 import styled from 'styled-components'
 import ControlBar from '../components/ControlBar'
 import ParBar from '../components/ParametersBar'
 import RestorePopup from '../components/RestoreComponents/RestorePopUp'
 import { DiffusionPlane, type SimulationParams } from '../components/Simulation'
+import WebGPUCanvas from '../components/WebGPUCanvas'
 import type { ModelSave } from '../services/model/modelService'
 import {
   type IncomingMessage,
@@ -28,11 +28,6 @@ const SimulatorContainer = styled.div`
     height: calc(100vh - 6rem);
     z-index: 0;
   }
-`
-
-const Simulator = styled(Canvas)`
-  background: transparent;
-  z-index: 0;
 `
 
 interface IndexProp {
@@ -105,7 +100,7 @@ export default function Home(props: IndexProp): JSX.Element {
     <>
       <ParBar params={simulationParams} setParams={setSimulationParams} />
       <SimulatorContainer>
-        <Simulator
+        <WebGPUCanvas
           shadows
           camera={{
             position: [1, 10, 1],
@@ -123,7 +118,7 @@ export default function Home(props: IndexProp): JSX.Element {
             worker={worker}
             outputSubs={outputSubs}
           />
-        </Simulator>
+        </WebGPUCanvas>
       </SimulatorContainer>
       {restorePopupVisible && (
         <RestorePopup

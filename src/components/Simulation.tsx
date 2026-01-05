@@ -5,9 +5,6 @@ import {
 } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as t from 'three'
-// WebGPU imports
-import WebGPU from 'three/addons/capabilities/WebGPU.js'
-import { WebGPURenderer } from 'three/webgpu'
 import fragmentShader from '../shaders/frag.glsl'
 import vertexShader from '../shaders/vert.glsl'
 import vertexShaderForHeightMap from '../shaders/vert_height.glsl'
@@ -65,17 +62,6 @@ function colToVec3(col: t.Color): t.Vector3 {
 function DiffusionPlane(
   props: ThreeElements['mesh'] & Renderable,
 ): JSX.Element {
-  // INITIALISATION
-
-  // WebGPU capability test
-  if (WebGPU.isAvailable()) {
-    const webgpuRenderer = new WebGPURenderer({ antialias: true })
-    console.log('browser supports webgpu rendering')
-    console.log('webgpu renderer context', webgpuRenderer)
-  } else {
-    console.log('browser does not support webgpu rendering')
-  }
-
   // reference to the parent mesh
   const ref = useRef<t.Mesh>(null!)
 
