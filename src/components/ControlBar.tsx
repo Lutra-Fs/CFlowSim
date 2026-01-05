@@ -1,49 +1,10 @@
 import { Button, Space } from 'antd'
 import { useEffect } from 'react'
-import styled from 'styled-components'
 import type { ModelSave } from '../services/model/modelService'
 import {
   type IncomingMessage,
   RunnerFunc,
 } from '../workers/modelWorkerMessage.ts'
-
-export const ControlBarContainer = styled(Space)`
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
-  z-index: 100;
-  display: flex;
-`
-
-export const SaveBtn = styled(Button)`
-  position: absolute;
-  bottom: 4rem;
-  right: 11rem;
-  color: #eeeeee;
-  background-color: #555555;
-  height: 3.2rem;
-  width: 8rem;
-  margin: 0 0.2rem;
-  cursor: pointer;
-  @media (max-width: 760px) {
-    margin-bottom: 0.2rem;
-  }
-`
-
-export const RestoreBtn = styled(Button)`
-  position: absolute;
-  bottom: 4rem;
-  right: 2rem;
-  color: #eeeeee;
-  background-color: #555555;
-  height: 3.2rem;
-  width: 8rem;
-  margin: 0 0.2rem;
-  cursor: pointer;
-  @media (max-width: 760px) {
-    margin-bottom: 0.2rem;
-  }
-`
 
 interface ControlBarProps {
   modelSaveSubs: Array<(save: ModelSave) => void>
@@ -91,24 +52,30 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
 
   return (
     <>
-      <SaveBtn
+      <Button
         onClick={() => {
           worker.postMessage({
             func: RunnerFunc.SERIALIZE,
           } satisfies IncomingMessage)
         }}
+        className="absolute bottom-16 right-[11rem] text-[#eeeeee] bg-[#555555] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
       >
         Save Model
-      </SaveBtn>
-      <RestoreBtn
+      </Button>
+      <Button
         onClick={() => {
           // create a RestorePopup component to handle input
           setRestorePopupVisible(true)
         }}
+        className="absolute bottom-16 right-2 text-[#eeeeee] bg-[#555555] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
       >
         Restore Model
-      </RestoreBtn>
-      <ControlBarContainer size="small" direction="horizontal">
+      </Button>
+      <Space
+        size="small"
+        direction="horizontal"
+        className="absolute bottom-4 right-4 z-[100] flex"
+      >
         <Button
           onClick={() => {
             worker.postMessage({
@@ -135,7 +102,7 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
         >
           TERMINATE
         </Button>
-      </ControlBarContainer>
+      </Space>
     </>
   )
 }

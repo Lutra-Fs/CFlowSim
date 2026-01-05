@@ -1,17 +1,4 @@
 import { useState } from 'react'
-import styled from 'styled-components'
-
-const Select = styled.select`
-  -webkit-appearance: none;
-  appearance: none;
-  width: 15rem;
-  display: block;
-  border: black 1px solid;
-  background: rgb(217, 217, 217);
-  margin: 5px 0;
-  padding: 0 5px;
-  height: 24px;
-`
 
 export default function DropdownParameter(props: {
   onChange: (value: string) => void
@@ -23,12 +10,13 @@ export default function DropdownParameter(props: {
     setValue(props.initValue)
   }
   return (
-    <Select
+    <select
       value={value}
       onChange={e => {
         setValue(e.target.value)
         props.onChange(e.target.value)
       }}
+      className="block appearance-none -webkit-appearance-none w-[15rem] border border-black bg-[rgb(217,217,217)] my-1 mx-0 px-1 h-6"
     >
       {props.values.map(val => (
         // use value as key, this asserts that the values are unique
@@ -37,6 +25,6 @@ export default function DropdownParameter(props: {
           {val}
         </option>
       ))}
-    </Select>
+    </select>
   )
 }

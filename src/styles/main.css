@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+body {
+  @apply m-0 min-h-screen;
+}
+
+.dark body {
+  @apply bg-gray-700 text-white;
+}
+
+[data-theme="light"] body {
+  @apply bg-white text-gray-900;
+}

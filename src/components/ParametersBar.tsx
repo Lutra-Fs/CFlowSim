@@ -16,97 +16,10 @@ import {
 import type { Color } from 'antd/es/color-picker'
 import type { SpaceSize } from 'antd/es/space'
 import { useEffect, useMemo, useState } from 'react'
-import styled from 'styled-components'
 import { Color as ThreeColor } from 'three'
 import ParameterButton from './ParameterComponents/ParameterButton'
 import ParameterLabel from './ParameterComponents/ParameterLabel'
 import type { SimulationParams } from './Simulation'
-
-interface Visible {
-  hidden: boolean
-}
-
-const Pane = styled.div<Visible>`
-  width: 22rem;
-  height: calc(100% - 5rem);
-
-  font-size: 2rem;
-  position: absolute;
-  display: flex;
-
-  text-align: left;
-
-  @media (max-width: 760px) {
-    display: none;
-  }
-  z-index: 1;
-`
-const Container = styled(Space)<Visible>`
-  background-color: #797979;
-  color: #fff;
-
-  width: 20rem;
-  height: calc(100% - 25px);
-
-  font-size: 2rem;
-  position: absolute;
-  left: ${props => (props.hidden ? '-20rem' : '0')};
-  display: flex;
-
-  text-align: left;
-
-  border-top-right-radius: 20px;
-  border-bottom-right-radius: 20px;
-
-  padding: 12px;
-
-  @media (max-width: 760px) {
-    display: none;
-  }
-  visibility: ${props => (props.hidden ? 'hidden' : 'visible')};
-  transition:
-    left 0.5s linear,
-    visibility 0.5s linear;
-`
-
-const Title = styled.span`
-  font-family: 'Roboto', sans-serif;
-  font-size: 2rem;
-
-  @media (max-width: 760px) {
-    display: none;
-  }
-`
-
-const Category = styled(Card)`
-  font-family: 'Roboto', sans-serif;
-  background-color: #797979;
-  text-align: left;
-  font-size: 1rem;
-  color: #ffffff;
-`
-
-const BackButton = styled.button<Visible>`
-  position: absolute;
-  top: 0.5rem;
-  left: ${props => (props.hidden ? '0.5rem' : '22.5rem')};
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 50%;
-  background-color: #d9d9d9;
-  color: #464646;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  z-index: 100;
-  transition: left 0.5s linear;
-`
-
-const DropdownMenu = styled.a`
-  font-family: 'Roboto', sans-serif;
-  font-size: 1rem;
-  color: #000000;
-`
 
 function ShowHideButton(props: {
   isVisible: boolean
@@ -116,14 +29,16 @@ function ShowHideButton(props: {
   const setVisible = props.setVisible
 
   return (
-    <BackButton
-      hidden={!isVisible}
+    <button
       onClick={() => {
         setVisible(!isVisible)
       }}
+      className={`absolute top-2 w-[2.75rem] h-[2.75rem] rounded-full bg-[#d9d9d9] text-[#464646] text-base border-none cursor-pointer z-[100] transition-all duration-500 ${
+        isVisible ? 'left-[22.5rem]' : 'left-2'
+      }`}
     >
       {isVisible ? <DoubleLeftOutlined /> : <DoubleRightOutlined />}
-    </BackButton>
+    </button>
   )
 }
 
@@ -184,17 +99,25 @@ export default function ParametersBar(props: {
   }, [renderHeightMap, isCameraControlMode, setParams])
 
   return (
-    <Pane hidden={!containerVisible}>
+    <div className={`absolute w-[22rem] h-[calc(100%-5rem)] text-2xl flex z-1 ${containerVisible ? '' : 'hidden'} max-[760px]:hidden`}>
       <ShowHideButton
         isVisible={containerVisible}
         setVisible={setContainerVisible}
       />
-      <Container direction="vertical" size={space} hidden={!containerVisible}>
+      <Space
+        direction="vertical"
+        size={space}
+        className={`bg-[#797979] text-white w-[20rem] h-[calc(100%-25px)] text-2xl absolute rounded-tr-[20px] rounded-br-[20px] p-3 max-[760px]:hidden ${
+          containerVisible ? 'left-0 visible' : 'left-[-20rem] invisible'
+        } transition-all duration-500`}
+      >
         {/* hide button */}
         <Row justify="end"></Row>
 
         {/* header */}
-        <Title>Parameters</Title>
+        <span className="font-['Roboto',sans-serif] text-2xl max-[760px]:hidden">
+          Parameters
+        </span>
         <Row gutter={16}>
           <Col className="gutter-row" span={12}>
             <ParameterButton
@@ -272,7 +195,8 @@ export default function ParametersBar(props: {
         </Row>
         {/* choose initial model */}
         <Dropdown menu={{ items, onClick }}>
-          <DropdownMenu
+          <a
+            className="font-['Roboto',sans-serif] text-base text-black"
             onClick={e => {
               e.preventDefault()
             }}
@@ -281,12 +205,13 @@ export default function ParametersBar(props: {
               Choose Model
               <DownOutlined />
             </Space>
-          </DropdownMenu>
+          </a>
         </Dropdown>
 
         {/* choose initial state */}
         <Dropdown menu={{ items, onClick }}>
-          <DropdownMenu
+          <a
+            className="font-['Roboto',sans-serif] text-base text-black"
             onClick={e => {
               e.preventDefault()
             }}
@@ -295,10 +220,10 @@ export default function ParametersBar(props: {
               Choose Initial State
               <DownOutlined />
             </Space>
-          </DropdownMenu>
+          </a>
         </Dropdown>
-      </Container>
-    </Pane>
+      </Space>
+    </div>
   )
 }
 
@@ -340,7 +265,10 @@ function SimulationColour(props: {
   }, [colorLowString, colorHighString, setParams])
 
   return (
-    <Category title={'Simulation Colour'}>
+    <Card
+      title={'Simulation Colour'}
+      className="font-['Roboto',sans-serif] bg-[#797979] text-left text-base text-white [&_.ant-card-head]:bg-[#797979] [&_.ant-card-head-title]:text-white [&_.ant-card-body]:bg-[#797979] [&_.ant-card-body]:text-white"
+    >
       <Row justify="start" gutter={16}>
         <Col className="gutter-row" span={12}>
           <ParameterLabel
@@ -364,6 +292,6 @@ function SimulationColour(props: {
           <ColorPicker value={colorHigh} onChange={setColorHigh} />
         </Col>
       </Row>
-    </Category>
+    </Card>
   )
 }

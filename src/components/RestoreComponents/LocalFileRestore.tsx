@@ -2,7 +2,6 @@ import { InboxOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import { Upload } from 'antd'
 import type { RcFile } from 'antd/es/upload'
-import styled from 'styled-components'
 import {
   type IncomingMessage,
   RunnerFunc,
@@ -10,12 +9,6 @@ import {
 import type { RestoreProps } from './RestoreProps'
 
 const { Dragger } = Upload
-
-const DragandDrop = styled.div`
-  width: 100%;
-  height: 100%;
-  z-index: 100;
-`
 
 export default function LocalFileRestore(props: RestoreProps): JSX.Element {
   const { worker } = props
@@ -47,7 +40,7 @@ export default function LocalFileRestore(props: RestoreProps): JSX.Element {
     beforeUpload: getBeforeUpload(worker),
   }
   return (
-    <DragandDrop>
+    <div className="w-full h-full z-[100]">
       <Dragger {...uploadProps}>
         <p className="ant-upload-drag-icon">
           <InboxOutlined />
@@ -56,6 +49,6 @@ export default function LocalFileRestore(props: RestoreProps): JSX.Element {
           Click or drag file to this area to upload
         </p>
       </Dragger>
-    </DragandDrop>
+    </div>
   )
 }

@@ -1,43 +1,4 @@
 import { useState } from 'react'
-import styled from 'styled-components'
-
-const Slider = styled.input`
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-  width: 15rem;
-  height: 24px;
-  display: block;
-  margin: 5px 0;
-
-  &::-webkit-slider-runnable-track {
-    -webkit-appearance: none;
-    background: rgb(217, 217, 217);
-    height: 100%;
-  }
-  &::-moz-range-track {
-    -webkit-appearance: none;
-    background: rgb(217, 217, 217);
-    height: 100%;
-  }
-  &::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    background: rgb(32, 32, 32);
-    height: 100%;
-    width: 10px;
-    border: none;
-    border-radius: 0;
-  }
-  &::-moz-range-thumb {
-    -webkit-appearance: none;
-    background: rgb(32, 32, 32);
-    height: 100%;
-    width: 10px;
-    border: none;
-    border-radius: 0;
-  }
-`
 
 export default function SliderParameter(props: {
   onChange: (value: number) => void
@@ -51,7 +12,7 @@ export default function SliderParameter(props: {
   }
 
   return (
-    <Slider
+    <input
       type="range"
       min={props.lowerBound}
       max={props.upperBound}
@@ -61,6 +22,7 @@ export default function SliderParameter(props: {
         setValue(val)
         props.onChange(val)
       }}
+      className="block w-[15rem] h-6 my-1 mx-0 appearance-none -webkit-appearance-none bg-transparent cursor-pointer [&::-webkit-slider-runnable-track]:appearance-none [&::-webkit-slider-runnable-track]:bg-[rgb(217,217,217)] [&::-webkit-slider-runnable-track]:h-full [&::-moz-range-track]:appearance-none [&::-moz-range-track]:bg-[rgb(217,217,217)] [&::-moz-range-track]:h-full [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-[rgb(32,32,32)] [&::-webkit-slider-thumb]:h-full [&::-webkit-slider-thumb]:w-[10px] [&::-webkit-slider-thumb]:border-none [&::-webkit-slider-thumb]:rounded-none [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:bg-[rgb(32,32,32)] [&::-moz-range-thumb]:h-full [&::-moz-range-thumb]:w-[10px] [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:rounded-none"
     />
   )
 }

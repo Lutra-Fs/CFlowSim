@@ -1,203 +1,121 @@
 import { Button } from 'antd'
 import { useState } from 'react'
-
-// for themes switching
-import styled from 'styled-components'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface NavBarProps {
-  setCurThemeMode: React.Dispatch<React.SetStateAction<string>>
+  setCurThemeMode: (mode: 'auto' | 'light' | 'dark') => void
   setPage: React.Dispatch<React.SetStateAction<number>>
 }
-
-const Header = styled.header`
-  display: flex;
-  align-items: center;
-  height: 5rem;
-  background-color: ${props =>
-    (props.theme.light as boolean) ? '#004b87' : '#142c3f'};
-  color: ${props => ((props.theme.light as boolean) ? '#f5f5f5' : '#9faee5')};
-`
-
-const LogoAnchor = styled.a`
-  margin: 0 1rem;
-  color: #eee;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-`
-
-const Logo = styled.img`
-  border: 1px solid #000000;
-  filter: invert(100%);
-  position: relative;
-  width: 65px;
-  height: 65px;
-  color: #eee;
-`
-
-const Name = styled.div`
-  position: relative;
-  left: 1.4rem;
-  bottom: 0.2rem;
-  font-family: 'Darumadrop One', cursive;
-  font-size: 2.3rem;
-`
-
-const ButtonGroup = styled.nav`
-  display: flex;
-  position: absolute;
-  right: 1rem;
-  flex-direction: row;
-  align-items: center;
-  margin-right: 2rem;
-  @media (max-width: 760px) {
-    display: none;
-  }
-`
-
-const ThemeButton = styled.button`
-  font-family: 'Source Code Pro', monospace;
-  font-size: 0.8rem;
-  color: #000000;
-  background-color: #f3f3f3;
-  height: 2.7rem;
-  width: 4.5rem;
-  margin: 0 0.1rem;
-  cursor: pointer;
-`
-
-const NavButton = styled(Button)`
-  color: #eeeeee;
-  background-color: #00a9ce;
-  height: 3.2rem;
-  width: 8rem;
-  margin: 0 0.2rem;
-  cursor: pointer;
-  @media (max-width: 760px) {
-    margin-bottom: 0.2rem;
-  }
-`
-
-const HamburgerBar = styled.button`
-  display: inline;
-  width: 2rem;
-  height: 9rem;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 2em;
-  position: absolute;
-  right: 2rem;
-  cursor: pointer;
-  @media (min-width: 760px) {
-    display: none;
-  }
-`
-
-const ExtendContainer = styled.nav`
-  display: inline;
-  flex-direction: column;
-  align-items: center;
-  width: 8.4rem;
-  height: 15rem;
-  position: absolute;
-  top: 4.5rem;
-  right: 1rem;
-  margin-bottom: 1rem;
-  @media (min-width: 760px) {
-    display: none;
-  }
-`
 
 export default function NavBar(props: NavBarProps): React.ReactElement {
   const { setCurThemeMode, setPage } = props
   const [isShowExtend, setIsShowExtend] = useState(false)
+  const { lightTheme } = useTheme()
 
   return (
-    <Header>
-      <LogoAnchor href="/">
-        <Logo
+    <header
+      className={`flex items-center h-20 ${
+        lightTheme ? 'bg-[#004b87] text-[#f5f5f5]' : 'bg-[#142c3f] text-[#9faee5]'
+      }`}
+    >
+      <a
+        href="/"
+        className="m-4 text-[#eee] no-underline flex items-center"
+      >
+        <img
           src="/physics.svg"
           alt="Physics in the Browser Logo "
           width={50}
           height={50}
+          className="border border-black invert relative w-[65px] h-[65px] text-[#eee]"
         />
-        <Name>CFlowSim</Name>
-      </LogoAnchor>
-      <HamburgerBar
+        <div className="relative left-[1.4rem] bottom-1 font-['Darumadrop_One',cursive] text-[2.3rem]">
+          CFlowSim
+        </div>
+      </a>
+      <button
         onClick={() => {
           setIsShowExtend(curr => !curr)
         }}
+        className="inline w-8 h-36 bg-none border-none text-white text-2xl absolute right-8 cursor-pointer min-[760px]:hidden"
       >
         {isShowExtend ? <>&#10005;</> : <>&#8801;</>}
-      </HamburgerBar>
+      </button>
 
-      <ButtonGroup>
-        <NavButton
+      <nav className="flex absolute right-4 flex-row items-center mr-8 max-[760px]:hidden">
+        <Button
           type="primary"
           onClick={() => {
             setPage(0)
           }}
+          className="text-[#eeeeee] bg-[#00a9ce] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
         >
           Simulations
-        </NavButton>
-        <NavButton
+        </Button>
+        <Button
           type="primary"
           onClick={() => {
             setPage(1)
           }}
+          className="text-[#eeeeee] bg-[#00a9ce] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
         >
           About
-        </NavButton>
-        <ThemeButton
+        </Button>
+        <button
           onClick={() => {
             setCurThemeMode('light')
           }}
+          className="font-['Source_Code_Pro',monospace] text-sm text-black bg-[#f3f3f3] h-[2.7rem] w-[4.5rem] m-0 mx-1 cursor-pointer"
         >
           Light
-        </ThemeButton>
-        <ThemeButton
+        </button>
+        <button
           onClick={() => {
             setCurThemeMode('dark')
           }}
+          className="font-['Source_Code_Pro',monospace] text-sm text-black bg-[#f3f3f3] h-[2.7rem] w-[4.5rem] m-0 mx-1 cursor-pointer"
         >
           Dark
-        </ThemeButton>
-      </ButtonGroup>
+        </button>
+      </nav>
       {isShowExtend ? (
-        <ExtendContainer>
-          <NavButton
+        <nav className="inline flex-col items-center w-[8.4rem] h-[15rem] absolute top-[4.5rem] right-4 mb-4 min-[760px]:hidden">
+          <Button
             type="primary"
             onClick={() => {
               setPage(0)
             }}
+            className="text-[#eeeeee] bg-[#00a9ce] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
           >
             Simulations
-          </NavButton>
-          <NavButton
+          </Button>
+          <Button
             type="primary"
             onClick={() => {
               setPage(1)
             }}
+            className="text-[#eeeeee] bg-[#00a9ce] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
           >
             About
-          </NavButton>
-          <ThemeButton
+          </Button>
+          <button
             onClick={() => {
               setCurThemeMode('light')
             }}
+            className="font-['Source_Code_Pro',monospace] text-sm text-black bg-[#f3f3f3] h-[2.7rem] w-[4.5rem] m-0 mx-1 cursor-pointer"
           >
             Light
-          </ThemeButton>
-          <ThemeButton
+          </button>
+          <button
             onClick={() => {
               setCurThemeMode('dark')
             }}
+            className="font-['Source_Code_Pro',monospace] text-sm text-black bg-[#f3f3f3] h-[2.7rem] w-[4.5rem] m-0 mx-1 cursor-pointer"
           >
             Dark
-          </ThemeButton>
-        </ExtendContainer>
+          </button>
+        </nav>
       ) : null}
-    </Header>
+    </header>
   )
 }

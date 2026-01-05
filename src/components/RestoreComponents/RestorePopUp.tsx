@@ -1,80 +1,9 @@
 import { CloseOutlined } from '@ant-design/icons'
 import { Divider, Menu } from 'antd'
 import { useState } from 'react'
-import styled from 'styled-components'
 import IndexedDBRestore from './IndexedDBRestore'
 import LocalFileRestore from './LocalFileRestore'
 import type { RestoreProps } from './RestoreProps'
-
-const Popup = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 60%;
-  height: 80%;
-  background-color: #ffffff;
-  border-radius: 1rem;
-  transform: translate(-50%, -50%);
-  z-index: 100;
-
-  @media (max-width: 760px) {
-    width: 95%;
-    height: 97%;
-  }
-`
-
-const IconButton = styled.button`
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background-color: transparent;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-`
-
-const LeftColumn = styled.div`
-  width: 25%;
-  height: 100%;
-  float: left;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  @media (max-width: 760px) {
-    width: 95%;
-    float: none;
-    height: 30%;
-  }
-`
-const SafeArea = styled.div`
-  width: 80%;
-  height: 90%;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-`
-
-const RightColumn = styled.div`
-  width: 70%;
-  height: 100%;
-  float: left;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  @media (max-width: 760px) {
-    width: 100%;
-    float: none;
-    height: 70%;
-  }
-`
-
-const MenuContainer = styled(Menu)`
-  width: 100%;
-  height: 100%;
-  border: none;
-`
 
 export default function RestorePopup(props: RestoreProps): JSX.Element {
   const setRestorePopupVisible = props.setRestorePopupVisible
@@ -102,25 +31,32 @@ export default function RestorePopup(props: RestoreProps): JSX.Element {
   }
 
   return (
-    <Popup id="restore-popup">
-      <IconButton onClick={handleCloseClick}>
+    <div
+      id="restore-popup"
+      className="absolute top-1/2 left-1/2 w-[60%] h-[80%] bg-white rounded-[1rem] -translate-x-1/2 -translate-y-1/2 z-[100] max-[760px]:w-[95%] max-[760px]:h-[97%]"
+    >
+      <button
+        onClick={handleCloseClick}
+        className="absolute top-2 right-2 bg-transparent border-none text-base cursor-pointer"
+      >
         <CloseOutlined />
-      </IconButton>
-      <LeftColumn>
-        <SafeArea>
-          <MenuContainer
+      </button>
+      <div className="float-left flex justify-center items-center w-1/4 h-full max-[760px]:w-[95%] max-[760px]:float-none max-[760px]:h-[30%]">
+        <div className="w-[80%] h-[90%] overflow-hidden flex justify-center">
+          <Menu
             onClick={handleItemClick}
             selectedKeys={[selectedItem]}
+            className="w-full h-full border-none"
           >
             <Menu.Item key="A">Local PC</Menu.Item>
             <Menu.Item key="B">IndexedDB</Menu.Item>
-          </MenuContainer>
-        </SafeArea>
-      </LeftColumn>
+          </Menu>
+        </div>
+      </div>
       <Divider type="vertical" />
-      <RightColumn>
-        <SafeArea>{renderRightColumn()}</SafeArea>
-      </RightColumn>
-    </Popup>
+      <div className="float-left flex justify-center items-center w-[70%] h-full max-[760px]:w-full max-[760px]:float-none max-[760px]:h-[70%]">
+        <div className="w-[80%] h-[90%] overflow-hidden flex justify-center">{renderRightColumn()}</div>
+      </div>
+    </div>
   )
 }

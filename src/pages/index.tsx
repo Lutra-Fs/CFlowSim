@@ -1,6 +1,5 @@
 import { OrbitControls } from '@react-three/drei'
 import { useEffect, useMemo, useState } from 'react'
-import styled from 'styled-components'
 import ControlBar from '../components/ControlBar'
 import ParBar from '../components/ParametersBar'
 import RestorePopup from '../components/RestoreComponents/RestorePopUp'
@@ -12,23 +11,6 @@ import {
   type OutgoingMessage,
   RunnerFunc,
 } from '../workers/modelWorkerMessage'
-
-const SimulatorContainer = styled.div`
-  position: relative;
-  left: 21rem;
-  top: 1rem;
-  width: calc(100% - 22rem);
-  height: calc(100% - 7rem);
-  z-index: 0;
-  @media (max-width: 760px) {
-    position: relative;
-    left: 6rem;
-    top: 6rem;
-    width: calc(100vw - 12rem);
-    height: calc(100vh - 6rem);
-    z-index: 0;
-  }
-`
 
 interface IndexProp {
   simulationParams: SimulationParams
@@ -99,7 +81,7 @@ export default function Home(props: IndexProp): JSX.Element {
   return (
     <>
       <ParBar params={simulationParams} setParams={setSimulationParams} />
-      <SimulatorContainer>
+      <div className="relative left-[21rem] top-4 w-[calc(100%-22rem)] h-[calc(100%-7rem)] z-0 max-[760px]:left-[6rem] max-[760px]:top-[6rem] max-[760px]:w-[calc(100vw-12rem)] max-[760px]:h-[calc(100vh-6rem)]">
         <WebGPUCanvas
           shadows
           camera={{
@@ -119,7 +101,7 @@ export default function Home(props: IndexProp): JSX.Element {
             outputSubs={outputSubs}
           />
         </WebGPUCanvas>
-      </SimulatorContainer>
+      </div>
       {restorePopupVisible && (
         <RestorePopup
           worker={worker}

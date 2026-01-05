@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import styled, { ThemeProvider } from 'styled-components'
 import NavBar from './components/NavBar'
 
-import './App.css'
+import './styles/main.css'
 import { SimulationParams } from './components/Simulation'
 import Home from './pages'
 import AboutPage from './pages/about'
@@ -11,51 +10,15 @@ import {
   type InitArgs,
   RunnerFunc,
 } from './workers/modelWorkerMessage'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 
-const Main = styled.main`
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100vw;
-  height: 100vh;
-  background: ${props =>
-    (props.theme.light as boolean) ? '#ffffff' : '#707070'};
-  z-index: 0;
-`
-
-const NavBarContainer = styled.div`
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
-  font-family: 'Titillium Web', sans-serif;
-`
-
-function App(): JSX.Element {
+function AppContent(): JSX.Element {
   // save the current page in state
   // 0 = home(index,simulation) 1 = about
   const [page, setPage] = useState(0)
   const [simulationParams, setSimulationParams] = useState<SimulationParams>(
     new SimulationParams(),
   )
-
-  const [lightTheme, setLightTheme] = useState<boolean>(false)
-  // TODO: implement auto theme ui switch
-  const [curThemeMode, setCurThemeMode] = useState<string>('auto') // 'dark' or 'light' or 'auto'
-
-  useEffect(() => {
-    if (curThemeMode === 'auto') {
-      const darkModeMediaQuery = window.matchMedia(
-        '(prefers-color-scheme: dark)',
-      )
-      darkModeMediaQuery.addEventListener('change', e => {
-        const newColorScheme = e.matches ? 'dark' : 'light'
-        setLightTheme(newColorScheme === 'light')
-      })
-      setLightTheme(darkModeMediaQuery.matches)
-    } else {
-      setLightTheme(curThemeMode === 'light')
-    }
-  }, [curThemeMode])
 
   const [simWorker, setSimWorker] = useState<Worker>(null!)
   useEffect(() => {
@@ -85,6 +48,8 @@ function App(): JSX.Element {
     simWorker.postMessage(message)
   }, [simWorker])
 
+  const { setThemeMode } = useTheme()
+
   let mainPageComponent
   switch (page) {
     case 1:
@@ -103,13 +68,19 @@ function App(): JSX.Element {
   }
 
   return (
-    <ThemeProvider theme={{ light: lightTheme }}>
-      <Main>
-        <NavBarContainer>
-          <NavBar setPage={setPage} setCurThemeMode={setCurThemeMode} />
-        </NavBarContainer>
-        {mainPageComponent}
-      </Main>
+    <main className="absolute left-0 top-0 w-screen h-screen bg-gray-700 z-0 data-[theme-light]:bg-white">
+      <div className="p-0 m-0 box-border font-['Titillium_Web',sans-serif]">
+        <NavBar setPage={setPage} setCurThemeMode={setThemeMode} />
+      </div>
+      {mainPageComponent}
+    </main>
+  )
+}
+
+function App(): JSX.Element {
+  return (
+    <ThemeProvider>
+      <AppContent />
     </ThemeProvider>
   )
 }

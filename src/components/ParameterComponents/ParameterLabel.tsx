@@ -1,20 +1,5 @@
 import { QuestionCircleOutlined } from '@ant-design/icons'
 import { Tooltip } from 'antd'
-import styled from 'styled-components'
-
-const Lab = styled.div`
-  align-items: center;
-  height: 100%;
-  display: flex;
-  font-weight: bold;
-`
-
-const Styled = styled(Tooltip)`
-  .ant-tooltip-inner {
-    font-weight: normal;
-    color: #cfcfcf;
-  }
-`
 
 export default function ParameterLabel(props: {
   title: string
@@ -23,21 +8,20 @@ export default function ParameterLabel(props: {
   const tooltip: JSX.Element[] = []
   if (props.tooltip !== undefined) {
     tooltip.push(
-      <Styled>
-        <Tooltip
-          placement="right"
-          title={props.tooltip}
-          getPopupContainer={tn => tn}
-        >
-          <QuestionCircleOutlined />
-        </Tooltip>
-      </Styled>,
+      <Tooltip
+        placement="right"
+        title={props.tooltip}
+        getPopupContainer={tn => tn}
+        overlayClassName="[&_.ant-tooltip-inner]:font-normal [&_.ant-tooltip-inner]:text-[#cfcfcf]"
+      >
+        <QuestionCircleOutlined />
+      </Tooltip>,
     )
   }
 
   return (
-    <Lab>
+    <div className="flex h-full items-center font-bold">
       {props.title}&nbsp;&nbsp;{tooltip}
-    </Lab>
+    </div>
   )
 }

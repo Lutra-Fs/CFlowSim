@@ -1,7 +1,6 @@
 import { Divider, List, Typography } from 'antd'
 import { openDB } from 'idb'
 import { useEffect, useState } from 'react'
-import styled from 'styled-components'
 import type { ModelSave } from '../../services/model/modelService'
 import {
   type DeserializeArgs,
@@ -9,12 +8,6 @@ import {
   RunnerFunc,
 } from '../../workers/modelWorkerMessage'
 import type { RestoreProps } from './RestoreProps'
-
-const Container = styled.div`
-  width: 100%;
-  height: 100%;
-  z-index: 100;
-`
 
 export default function IndexedDBRestore(props: RestoreProps): JSX.Element {
   const { worker } = props
@@ -61,7 +54,7 @@ export default function IndexedDBRestore(props: RestoreProps): JSX.Element {
   }
 
   return (
-    <Container>
+    <div className="w-full h-full z-[100]">
       <Typography.Title level={3}>Select a key to restore:</Typography.Title>
       <Divider />
       <List
@@ -77,6 +70,6 @@ export default function IndexedDBRestore(props: RestoreProps): JSX.Element {
           </List.Item>
         )}
       />
-    </Container>
+    </div>
   )
 }
