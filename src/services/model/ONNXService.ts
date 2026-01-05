@@ -104,9 +104,17 @@ export default class ONNXService implements ModelService {
     console.log('init called')
     const metaUrl = new URL(import.meta.url)
     console.log('metaUrl', metaUrl)
-    // only keep the path part
-    // specify the wasm path for onnxruntime-web, because the website could not find the wasm file installed by npm
-    ort.env.wasm.wasmPaths = metaUrl.protocol + '//' + metaUrl.host + '/'
+    // Configure WASM paths for onnxruntime-web
+    // In dev: use node_modules path directly
+    // In prod: use assets path where files are copied during build
+    const isDev = import.meta.env.DEV
+    if (isDev) {
+      // In dev, serve from node_modules
+      ort.env.wasm.wasmPaths = '/node_modules/onnxruntime-web/dist/'
+    } else {
+      // In prod, serve from assets (copied by Vite's asset handling)
+      ort.env.wasm.wasmPaths = '/assets/'
+    }
     this.session = await ort.InferenceSession.create(modelPath, {
       executionProviders: [backend],
       graphOptimizationLevel: 'all',
