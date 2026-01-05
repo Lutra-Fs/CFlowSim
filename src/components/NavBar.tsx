@@ -1,4 +1,4 @@
-import { Button } from 'antd'
+import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
 
@@ -44,7 +44,6 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
 
       <nav className="flex absolute right-4 flex-row items-center mr-8 max-[760px]:hidden">
         <Button
-          type="primary"
           onClick={() => {
             setPage(0)
           }}
@@ -53,7 +52,6 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
           Simulations
         </Button>
         <Button
-          type="primary"
           onClick={() => {
             setPage(1)
           }}
@@ -81,7 +79,6 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
       {isShowExtend ? (
         <nav className="inline flex-col items-center w-[8.4rem] h-[15rem] absolute top-[4.5rem] right-4 mb-4 min-[760px]:hidden">
           <Button
-            type="primary"
             onClick={() => {
               setPage(0)
             }}
@@ -90,7 +87,6 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
             Simulations
           </Button>
           <Button
-            type="primary"
             onClick={() => {
               setPage(1)
             }}

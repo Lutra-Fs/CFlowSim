@@ -1,4 +1,4 @@
-import { Divider, List, Typography } from 'antd'
+import { Separator } from '@/components/ui/separator'
 import { openDB } from 'idb'
 import { useEffect, useState } from 'react'
 import type { ModelSave } from '../../services/model/modelService'
@@ -55,21 +55,21 @@ export default function IndexedDBRestore(props: RestoreProps): JSX.Element {
 
   return (
     <div className="w-full h-full z-[100]">
-      <Typography.Title level={3}>Select a key to restore:</Typography.Title>
-      <Divider />
-      <List
-        bordered
-        dataSource={keys}
-        renderItem={key => (
-          <List.Item
+      <h3 className="text-xl font-semibold mb-2">Select a key to restore:</h3>
+      <Separator />
+      <div className="border rounded-md mt-2">
+        {keys.map(key => (
+          <div
+            key={key}
             onClick={() => {
               handleSelect(key)
             }}
+            className="p-3 border-b last:border-b-0 hover:bg-gray-100 cursor-pointer"
           >
-            <Typography.Text>{key}</Typography.Text>
-          </List.Item>
-        )}
-      />
+            <span className="text-sm">{key}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

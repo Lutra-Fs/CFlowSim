@@ -73,6 +73,11 @@ export default defineConfig({
     copyOnnxWasmFiles(),
     wasmMiddleware(),
   ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+    },
+  },
   optimizeDeps: {
     esbuildOptions: {
       target: 'esnext',

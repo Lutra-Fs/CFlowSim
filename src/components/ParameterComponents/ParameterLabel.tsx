@@ -1,5 +1,5 @@
-import { QuestionCircleOutlined } from '@ant-design/icons'
-import { Tooltip } from 'antd'
+import { CircleHelp } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 export default function ParameterLabel(props: {
   title: string
@@ -8,13 +8,13 @@ export default function ParameterLabel(props: {
   const tooltip: JSX.Element[] = []
   if (props.tooltip !== undefined) {
     tooltip.push(
-      <Tooltip
-        placement="right"
-        title={props.tooltip}
-        getPopupContainer={tn => tn}
-        overlayClassName="[&_.ant-tooltip-inner]:font-normal [&_.ant-tooltip-inner]:text-[#cfcfcf]"
-      >
-        <QuestionCircleOutlined />
+      <Tooltip>
+        <TooltipTrigger>
+          <CircleHelp className="h-4 w-4" />
+        </TooltipTrigger>
+        <TooltipContent side="right" className="font-normal">
+          {props.tooltip}
+        </TooltipContent>
       </Tooltip>,
     )
   }

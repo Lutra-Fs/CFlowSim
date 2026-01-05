@@ -1,5 +1,5 @@
-import { CloseOutlined } from '@ant-design/icons'
-import { Divider, Menu } from 'antd'
+import { X } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
 import { useState } from 'react'
 import IndexedDBRestore from './IndexedDBRestore'
 import LocalFileRestore from './LocalFileRestore'
@@ -39,21 +39,27 @@ export default function RestorePopup(props: RestoreProps): JSX.Element {
         onClick={handleCloseClick}
         className="absolute top-2 right-2 bg-transparent border-none text-base cursor-pointer"
       >
-        <CloseOutlined />
+        <X className="h-4 w-4" />
       </button>
       <div className="float-left flex justify-center items-center w-1/4 h-full max-[760px]:w-[95%] max-[760px]:float-none max-[760px]:h-[30%]">
         <div className="w-[80%] h-[90%] overflow-hidden flex justify-center">
-          <Menu
-            onClick={handleItemClick}
-            selectedKeys={[selectedItem]}
-            className="w-full h-full border-none"
-          >
-            <Menu.Item key="A">Local PC</Menu.Item>
-            <Menu.Item key="B">IndexedDB</Menu.Item>
-          </Menu>
+          <div className="w-full h-full flex flex-col">
+            <button
+              onClick={() => handleItemClick({ key: 'A' })}
+              className={`w-full text-left p-2 border-b ${selectedItem === 'A' ? 'bg-gray-200' : ''}`}
+            >
+              Local PC
+            </button>
+            <button
+              onClick={() => handleItemClick({ key: 'B' })}
+              className={`w-full text-left p-2 ${selectedItem === 'B' ? 'bg-gray-200' : ''}`}
+            >
+              IndexedDB
+            </button>
+          </div>
         </div>
       </div>
-      <Divider type="vertical" />
+      <Separator orientation="vertical" className="h-full" />
       <div className="float-left flex justify-center items-center w-[70%] h-full max-[760px]:w-full max-[760px]:float-none max-[760px]:h-[70%]">
         <div className="w-[80%] h-[90%] overflow-hidden flex justify-center">{renderRightColumn()}</div>
       </div>

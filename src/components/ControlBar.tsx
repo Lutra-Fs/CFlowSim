@@ -1,4 +1,4 @@
-import { Button, Space } from 'antd'
+import { Button } from '@/components/ui/button'
 import { useEffect } from 'react'
 import type { ModelSave } from '../services/model/modelService'
 import {
@@ -71,11 +71,7 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
       >
         Restore Model
       </Button>
-      <Space
-        size="small"
-        direction="horizontal"
-        className="absolute bottom-4 right-4 z-[100] flex"
-      >
+      <div className="absolute bottom-4 right-4 z-[100] flex gap-1">
         <Button
           onClick={() => {
             worker.postMessage({
@@ -102,7 +98,7 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
         >
           TERMINATE
         </Button>
-      </Space>
+      </div>
     </>
   )
 }
