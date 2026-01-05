@@ -1,11 +1,11 @@
-import styled from 'styled-components';
-import { useState } from 'react';
+import { useState } from 'react'
+import styled from 'styled-components'
 
 const Container = styled.div`
   margin: 5px 0;
-`;
-const Row = styled.div``;
-const Col = styled.span``;
+`
+const Row = styled.div``
+const Col = styled.span``
 const Button = styled.button`
   -webkit-appearance: none;
   appearance: none;
@@ -20,21 +20,21 @@ const Button = styled.button`
     background: rgb(42, 40, 161);
     color: white;
   }
-`;
+`
 
 export default function ChoiceParameter(props: {
-  onChange: (value: string) => void;
-  values: string[];
-  initValue?: string;
+  onChange: (value: string) => void
+  values: string[]
+  initValue?: string
 }): JSX.Element {
-  const [value, setValue] = useState(props.values[0]);
+  const [value, setValue] = useState(props.values[0])
   if (props.initValue !== undefined) {
-    setValue(props.initValue);
+    setValue(props.initValue)
   }
   // split values into rows of 3
-  const rows: string[][] = [];
+  const rows: string[][] = []
   for (let i = 0; i < props.values.length; i += 3) {
-    rows.push(props.values.slice(i * 3, i * 3 + 3));
+    rows.push(props.values.slice(i * 3, i * 3 + 3))
   }
 
   return (
@@ -42,13 +42,13 @@ export default function ChoiceParameter(props: {
       {rows.map((row, rowIndex) => (
         // eslint-disable-next-line @eslint-react/jsx/no-array-index-key
         <Row key={`row-${rowIndex}-${row.join('-')}`}>
-          {row.map((val) => (
+          {row.map(val => (
             <Col key={`col-${val}`}>
               <Button
                 data-value={val}
                 onClick={() => {
-                  setValue(val);
-                  props.onChange(val);
+                  setValue(val)
+                  props.onChange(val)
                 }}
                 className={val === value ? 'primary' : 'default'}
               >
@@ -59,5 +59,5 @@ export default function ChoiceParameter(props: {
         </Row>
       ))}
     </Container>
-  );
+  )
 }

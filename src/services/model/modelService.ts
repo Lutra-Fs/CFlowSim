@@ -1,19 +1,19 @@
-import { type Vector2 } from 'three';
-import { TfjsService } from './TfjsService';
-import ONNXService from './ONNXService';
-import MockModelService from './MockModelService';
+import type { Vector2 } from 'three'
+import MockModelService from './MockModelService'
+import ONNXService from './ONNXService'
+import { TfjsService } from './TfjsService'
 
 export interface ModelService {
-  startSimulation: () => void;
-  pauseSimulation: () => void;
-  bindOutput: (callback: (data: Float32Array) => void) => void;
-  getInputTensor: () => Float32Array;
-  getMass: () => number;
-  getInputShape: () => [number, number, number, number];
-  updateForce: (pos: Vector2, forceDelta: Vector2) => void;
-  loadDataArray: (array: number[][][][]) => void;
-  setMass: (mass: number) => void;
-  getType: () => string;
+  startSimulation: () => void
+  pauseSimulation: () => void
+  bindOutput: (callback: (data: Float32Array) => void) => void
+  getInputTensor: () => Float32Array
+  getMass: () => number
+  getInputShape: () => [number, number, number, number]
+  updateForce: (pos: Vector2, forceDelta: Vector2) => void
+  loadDataArray: (array: number[][][][]) => void
+  setMass: (mass: number) => void
+  getType: () => string
 }
 
 // a simple factory function to create a model service
@@ -26,17 +26,17 @@ export async function createModelService(
   fpsLimit = 15,
 ): Promise<ModelService> {
   // deal with internal paths
-  console.log(modelPath);
+  console.log(modelPath)
 
   if (modelPath.startsWith('/model/')) {
-    modelPath = new URL(modelPath, import.meta.url).href;
+    modelPath = new URL(modelPath, import.meta.url).href
   }
-  console.log(modelPath);
+  console.log(modelPath)
 
   // detect the model type
   // TODO: read the model type from the model definition file
-  const modelType = modelPath.split('.').pop();
-  console.log(modelType);
+  const modelType = modelPath.split('.').pop()
+  console.log(modelType)
   switch (modelType) {
     case 'json':
       return await TfjsService.createService(
@@ -47,7 +47,7 @@ export async function createModelService(
         outputChannelSize,
         fpsLimit,
         (await isWebGPUAvailable()) ? 'webgpu' : 'webgl',
-      );
+      )
     case 'onnx':
       return await ONNXService.createService(
         modelPath,
@@ -59,7 +59,7 @@ export async function createModelService(
         // ignore the backend setting for now
         // since ONNXRuntime doesn't support all ops we are using in webgpu
         // await isWebGPUAvailable() ? 'webgpu' : 'wasm',
-      );
+      )
     case 'mock':
       return MockModelService.createService(
         modelPath,
@@ -68,9 +68,9 @@ export async function createModelService(
         channelSize,
         outputChannelSize,
         fpsLimit,
-      );
+      )
     default:
-      throw new Error('Invalid model type');
+      throw new Error('Invalid model type')
   }
 }
 
@@ -81,7 +81,7 @@ export function modelSerialize(
   if (model == null) {
     throw new Error(
       'model is null, cannot serialise, check model is initialised or not',
-    );
+    )
   }
   // export a JSON as ModelSave
 
@@ -91,7 +91,7 @@ export function modelSerialize(
     modelType: model.getType(),
     modelUrl: url,
     time: new Date().toISOString(),
-  };
+  }
 }
 
 export async function modelDeserialize(
@@ -106,49 +106,49 @@ export async function modelDeserialize(
     input.inputTensor[0][0][0].length,
     input.inputTensor[0][0][0].length,
     15,
-  );
-  modelService.loadDataArray(input.inputTensor);
-  modelService.setMass(input.mass);
-  return modelService;
+  )
+  modelService.loadDataArray(input.inputTensor)
+  modelService.setMass(input.mass)
+  return modelService
 }
 
 export interface ModelSave {
-  modelType: string;
-  modelUrl: string;
-  time: string;
-  inputTensor: number[][][][];
-  mass: number;
+  modelType: string
+  modelUrl: string
+  time: string
+  inputTensor: number[][][][]
+  mass: number
 }
 
 function reshape(
   arr: Float32Array,
   shape: [number, number, number, number],
 ): number[][][][] {
-  const [d1, d2, d3, d4] = shape;
-  const result = new Array(d1);
-  let offset = 0;
+  const [d1, d2, d3, d4] = shape
+  const result = new Array(d1)
+  let offset = 0
   for (let i = 0; i < d1; i++) {
-    result[i] = new Array(d2);
+    result[i] = new Array(d2)
     for (let j = 0; j < d2; j++) {
-      result[i][j] = new Array(d3);
+      result[i][j] = new Array(d3)
       for (let k = 0; k < d3; k++) {
-        result[i][j][k] = new Array(d4);
+        result[i][j][k] = new Array(d4)
         for (let l = 0; l < d4; l++) {
-          result[i][j][k][l] = arr[offset++];
+          result[i][j][k][l] = arr[offset++]
         }
       }
     }
   }
-  return result;
+  return result
 }
 
 // check if webgpu is available
 async function isWebGPUAvailable(): Promise<boolean> {
   if ('gpu' in navigator) {
-    const gpu = await navigator.gpu.requestAdapter();
+    const gpu = await navigator.gpu.requestAdapter()
     if (gpu !== null) {
-      return true;
+      return true
     }
   }
-  return false;
+  return false
 }

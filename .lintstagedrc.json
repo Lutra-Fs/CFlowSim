@@ -1,5 +1,5 @@
 {
-  "*.{ts,tsx,js,jsx}": ["eslint", "prettier --list-different"],
-  "*.json": "prettier --list-different",
-  "*.md": "prettier --list-different"
+  "*.{ts,tsx,js,jsx}": ["biome check --write --no-errors-on-unmatched"],
+  "*.json": "biome format --write --no-errors-on-unmatched",
+  "*.md": "biome format --write --no-errors-on-unmatched"
 }

@@ -1,22 +1,22 @@
-import { Button } from 'antd';
-import { useState } from 'react';
+import { Button } from 'antd'
+import { useState } from 'react'
 
 // for themes switching
-import styled from 'styled-components';
+import styled from 'styled-components'
 
 interface NavBarProps {
-  setCurThemeMode: React.Dispatch<React.SetStateAction<string>>;
-  setPage: React.Dispatch<React.SetStateAction<number>>;
+  setCurThemeMode: React.Dispatch<React.SetStateAction<string>>
+  setPage: React.Dispatch<React.SetStateAction<number>>
 }
 
 const Header = styled.header`
   display: flex;
   align-items: center;
   height: 5rem;
-  background-color: ${(props) =>
+  background-color: ${props =>
     (props.theme.light as boolean) ? '#004b87' : '#142c3f'};
-  color: ${(props) => ((props.theme.light as boolean) ? '#f5f5f5' : '#9faee5')};
-`;
+  color: ${props => ((props.theme.light as boolean) ? '#f5f5f5' : '#9faee5')};
+`
 
 const LogoAnchor = styled.a`
   margin: 0 1rem;
@@ -24,7 +24,7 @@ const LogoAnchor = styled.a`
   text-decoration: none;
   display: flex;
   align-items: center;
-`;
+`
 
 const Logo = styled.img`
   border: 1px solid #000000;
@@ -33,7 +33,7 @@ const Logo = styled.img`
   width: 65px;
   height: 65px;
   color: #eee;
-`;
+`
 
 const Name = styled.div`
   position: relative;
@@ -41,7 +41,7 @@ const Name = styled.div`
   bottom: 0.2rem;
   font-family: 'Darumadrop One', cursive;
   font-size: 2.3rem;
-`;
+`
 
 const ButtonGroup = styled.nav`
   display: flex;
@@ -53,7 +53,7 @@ const ButtonGroup = styled.nav`
   @media (max-width: 760px) {
     display: none;
   }
-`;
+`
 
 const ThemeButton = styled.button`
   font-family: 'Source Code Pro', monospace;
@@ -64,7 +64,7 @@ const ThemeButton = styled.button`
   width: 4.5rem;
   margin: 0 0.1rem;
   cursor: pointer;
-`;
+`
 
 const NavButton = styled(Button)`
   color: #eeeeee;
@@ -76,7 +76,7 @@ const NavButton = styled(Button)`
   @media (max-width: 760px) {
     margin-bottom: 0.2rem;
   }
-`;
+`
 
 const HamburgerBar = styled.button`
   display: inline;
@@ -92,7 +92,7 @@ const HamburgerBar = styled.button`
   @media (min-width: 760px) {
     display: none;
   }
-`;
+`
 
 const ExtendContainer = styled.nav`
   display: inline;
@@ -107,11 +107,11 @@ const ExtendContainer = styled.nav`
   @media (min-width: 760px) {
     display: none;
   }
-`;
+`
 
 export default function NavBar(props: NavBarProps): React.ReactElement {
-  const { setCurThemeMode, setPage } = props;
-  const [isShowExtend, setIsShowExtend] = useState(false);
+  const { setCurThemeMode, setPage } = props
+  const [isShowExtend, setIsShowExtend] = useState(false)
 
   return (
     <Header>
@@ -126,7 +126,7 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
       </LogoAnchor>
       <HamburgerBar
         onClick={() => {
-          setIsShowExtend((curr) => !curr);
+          setIsShowExtend(curr => !curr)
         }}
       >
         {isShowExtend ? <>&#10005;</> : <>&#8801;</>}
@@ -136,7 +136,7 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
         <NavButton
           type="primary"
           onClick={() => {
-            setPage(0);
+            setPage(0)
           }}
         >
           Simulations
@@ -144,21 +144,21 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
         <NavButton
           type="primary"
           onClick={() => {
-            setPage(1);
+            setPage(1)
           }}
         >
           About
         </NavButton>
         <ThemeButton
           onClick={() => {
-            setCurThemeMode('light');
+            setCurThemeMode('light')
           }}
         >
           Light
         </ThemeButton>
         <ThemeButton
           onClick={() => {
-            setCurThemeMode('dark');
+            setCurThemeMode('dark')
           }}
         >
           Dark
@@ -169,7 +169,7 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
           <NavButton
             type="primary"
             onClick={() => {
-              setPage(0);
+              setPage(0)
             }}
           >
             Simulations
@@ -177,21 +177,21 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
           <NavButton
             type="primary"
             onClick={() => {
-              setPage(1);
+              setPage(1)
             }}
           >
             About
           </NavButton>
           <ThemeButton
             onClick={() => {
-              setCurThemeMode('light');
+              setCurThemeMode('light')
             }}
           >
             Light
           </ThemeButton>
           <ThemeButton
             onClick={() => {
-              setCurThemeMode('dark');
+              setCurThemeMode('dark')
             }}
           >
             Dark
@@ -199,5 +199,5 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
         </ExtendContainer>
       ) : null}
     </Header>
-  );
+  )
 }

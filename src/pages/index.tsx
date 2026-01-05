@@ -1,20 +1,17 @@
-import ParBar from '../components/ParametersBar';
-import ControlBar from '../components/ControlBar';
-import {
-  DiffusionPlane,
-  type SimulationParams,
-} from '../components/Simulation';
-import { Canvas } from '@react-three/fiber';
-import styled from 'styled-components';
-import { useEffect, useMemo, useState } from 'react';
+import { OrbitControls } from '@react-three/drei'
+import { Canvas } from '@react-three/fiber'
+import { useEffect, useMemo, useState } from 'react'
+import styled from 'styled-components'
+import ControlBar from '../components/ControlBar'
+import ParBar from '../components/ParametersBar'
+import RestorePopup from '../components/RestoreComponents/RestorePopUp'
+import { DiffusionPlane, type SimulationParams } from '../components/Simulation'
+import type { ModelSave } from '../services/model/modelService'
 import {
   type IncomingMessage,
   type OutgoingMessage,
   RunnerFunc,
-} from '../workers/modelWorkerMessage';
-import { type ModelSave } from '../services/model/modelService';
-import { OrbitControls } from '@react-three/drei';
-import RestorePopup from '../components/RestoreComponents/RestorePopUp';
+} from '../workers/modelWorkerMessage'
 
 const SimulatorContainer = styled.div`
   position: relative;
@@ -31,32 +28,32 @@ const SimulatorContainer = styled.div`
     height: calc(100vh - 6rem);
     z-index: 0;
   }
-`;
+`
 
 const Simulator = styled(Canvas)`
   background: transparent;
   z-index: 0;
-`;
+`
 
 interface IndexProp {
-  simulationParams: SimulationParams;
-  setSimulationParams: React.Dispatch<React.SetStateAction<SimulationParams>>;
-  worker: Worker;
+  simulationParams: SimulationParams
+  setSimulationParams: React.Dispatch<React.SetStateAction<SimulationParams>>
+  worker: Worker
 }
 
 export default function Home(props: IndexProp): JSX.Element {
-  const { simulationParams, setSimulationParams, worker } = props;
+  const { simulationParams, setSimulationParams, worker } = props
   useEffect(() => {
     const confirmExit = (e: BeforeUnloadEvent): void => {
-      console.log('beforeunload event triggered');
-      e.preventDefault();
-      e.returnValue = '';
-    };
-    window.addEventListener('beforeunload', confirmExit);
+      console.log('beforeunload event triggered')
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', confirmExit)
     return () => {
-      window.removeEventListener('beforeunload', confirmExit);
-    };
-  }, []);
+      window.removeEventListener('beforeunload', confirmExit)
+    }
+  }, [])
 
   // to distribute the worker messages across different components
   // we utilise an observer pattern where components can subscribe
@@ -64,45 +61,45 @@ export default function Home(props: IndexProp): JSX.Element {
   const outputSubs: Array<(density: Float32Array[]) => void> = useMemo(
     () => [],
     [],
-  );
+  )
 
-  const modelSaveSubs: Array<(save: ModelSave) => void> = useMemo(() => [], []);
-  const [restorePopupVisible, setRestorePopupVisible] = useState(false);
+  const modelSaveSubs: Array<(save: ModelSave) => void> = useMemo(() => [], [])
+  const [restorePopupVisible, setRestorePopupVisible] = useState(false)
 
   // distribute the worker callback
   useEffect(() => {
     if (worker !== null) {
-      worker.onmessage = (e) => {
-        const data = e.data as OutgoingMessage;
+      worker.onmessage = e => {
+        const data = e.data as OutgoingMessage
 
         switch (data.type) {
           case 'init':
-            console.log('worker initialised');
+            console.log('worker initialised')
             worker.postMessage({
               func: RunnerFunc.START,
-            } satisfies IncomingMessage);
-            break;
+            } satisfies IncomingMessage)
+            break
           case 'output':
             for (const x of outputSubs)
-              if (data.density !== undefined) x(data.density);
-            break;
+              if (data.density !== undefined) x(data.density)
+            break
 
           case 'modelSave':
             for (const x of modelSaveSubs) {
               if (data === null)
                 throw new Error(
                   'error in calling worker.modelSave, data was null',
-                );
-              x(data.save!);
+                )
+              x(data.save!)
             }
-            break;
+            break
         }
-      };
-      worker.onerror = (e) => {
-        console.log(e);
-      };
+      }
+      worker.onerror = e => {
+        console.log(e)
+      }
     }
-  }, [worker, outputSubs, modelSaveSubs]);
+  }, [worker, outputSubs, modelSaveSubs])
 
   return (
     <>
@@ -140,5 +137,5 @@ export default function Home(props: IndexProp): JSX.Element {
         setRestorePopupVisible={setRestorePopupVisible}
       />
     </>
-  );
+  )
 }

@@ -1,11 +1,11 @@
-import { Button, Space } from 'antd';
-import styled from 'styled-components';
-import { type ModelSave } from '../services/model/modelService';
-import { useEffect } from 'react';
+import { Button, Space } from 'antd'
+import { useEffect } from 'react'
+import styled from 'styled-components'
+import type { ModelSave } from '../services/model/modelService'
 import {
-  RunnerFunc,
   type IncomingMessage,
-} from '../workers/modelWorkerMessage.ts';
+  RunnerFunc,
+} from '../workers/modelWorkerMessage.ts'
 
 export const ControlBarContainer = styled(Space)`
   position: absolute;
@@ -13,7 +13,7 @@ export const ControlBarContainer = styled(Space)`
   right: 1rem;
   z-index: 100;
   display: flex;
-`;
+`
 
 export const SaveBtn = styled(Button)`
   position: absolute;
@@ -28,7 +28,7 @@ export const SaveBtn = styled(Button)`
   @media (max-width: 760px) {
     margin-bottom: 0.2rem;
   }
-`;
+`
 
 export const RestoreBtn = styled(Button)`
   position: absolute;
@@ -43,48 +43,48 @@ export const RestoreBtn = styled(Button)`
   @media (max-width: 760px) {
     margin-bottom: 0.2rem;
   }
-`;
+`
 
 interface ControlBarProps {
-  modelSaveSubs: Array<(save: ModelSave) => void>;
-  worker: Worker;
-  setRestorePopupVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  modelSaveSubs: Array<(save: ModelSave) => void>
+  worker: Worker
+  setRestorePopupVisible: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export default function ControlBar(props: ControlBarProps): JSX.Element {
-  const { modelSaveSubs, worker, setRestorePopupVisible } = props;
+  const { modelSaveSubs, worker, setRestorePopupVisible } = props
 
   useEffect(() => {
     if (!modelSaveSubs.includes(save)) {
-      modelSaveSubs.push(save);
+      modelSaveSubs.push(save)
     }
     return () => {
-      const index = modelSaveSubs.findIndex((value) => value === save);
+      const index = modelSaveSubs.findIndex(value => value === save)
       if (index !== -1) {
-        modelSaveSubs.splice(index, 1);
+        modelSaveSubs.splice(index, 1)
       }
-    };
-  }, [modelSaveSubs]);
+    }
+  }, [modelSaveSubs])
 
   // take the json and have the user download it
   function save(sav: ModelSave): void {
-    const filename = `${sav.modelType}@${sav.time}.json`;
-    const dat = JSON.stringify(sav);
-    const blob = new Blob([dat], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+    const filename = `${sav.modelType}@${sav.time}.json`
+    const dat = JSON.stringify(sav)
+    const blob = new Blob([dat], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.style.display = 'none';
-    document.body.appendChild(link);
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.style.display = 'none'
+    document.body.appendChild(link)
 
-    link.click();
+    link.click()
 
-    URL.revokeObjectURL(url);
-    document.body.removeChild(link);
+    URL.revokeObjectURL(url)
+    document.body.removeChild(link)
 
-    console.log('wrote a save to ' + filename, sav);
+    console.log('wrote a save to ' + filename, sav)
   }
 
   // take a file and send its contents to the worker
@@ -95,7 +95,7 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
         onClick={() => {
           worker.postMessage({
             func: RunnerFunc.SERIALIZE,
-          } satisfies IncomingMessage);
+          } satisfies IncomingMessage)
         }}
       >
         Save Model
@@ -103,7 +103,7 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
       <RestoreBtn
         onClick={() => {
           // create a RestorePopup component to handle input
-          setRestorePopupVisible(true);
+          setRestorePopupVisible(true)
         }}
       >
         Restore Model
@@ -113,7 +113,7 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
           onClick={() => {
             worker.postMessage({
               func: RunnerFunc.START,
-            } satisfies IncomingMessage);
+            } satisfies IncomingMessage)
           }}
         >
           Play
@@ -122,7 +122,7 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
           onClick={() => {
             worker.postMessage({
               func: RunnerFunc.PAUSE,
-            } satisfies IncomingMessage);
+            } satisfies IncomingMessage)
           }}
         >
           Pause
@@ -130,12 +130,12 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
         <Button onClick={() => {}}>Stop</Button>
         <Button
           onClick={() => {
-            worker.terminate();
+            worker.terminate()
           }}
         >
           TERMINATE
         </Button>
       </ControlBarContainer>
     </>
-  );
+  )
 }

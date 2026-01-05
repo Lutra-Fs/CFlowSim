@@ -1,5 +1,5 @@
-import styled from 'styled-components';
-import { useState } from 'react';
+import { useState } from 'react'
+import styled from 'styled-components'
 
 const Slider = styled.input`
   -webkit-appearance: none;
@@ -37,17 +37,17 @@ const Slider = styled.input`
     border: none;
     border-radius: 0;
   }
-`;
+`
 
 export default function SliderParameter(props: {
-  onChange: (value: number) => void;
-  lowerBound: number;
-  upperBound: number;
-  initValue?: number;
+  onChange: (value: number) => void
+  lowerBound: number
+  upperBound: number
+  initValue?: number
 }): JSX.Element {
-  const [value, setValue] = useState(props.lowerBound);
+  const [value, setValue] = useState(props.lowerBound)
   if (props.initValue !== undefined) {
-    setValue(props.initValue);
+    setValue(props.initValue)
   }
 
   return (
@@ -56,11 +56,11 @@ export default function SliderParameter(props: {
       min={props.lowerBound}
       max={props.upperBound}
       defaultValue={value}
-      onChange={(e) => {
-        const val = parseFloat(e.target.value);
-        setValue(val);
-        props.onChange(val);
+      onChange={e => {
+        const val = parseFloat(e.target.value)
+        setValue(val)
+        props.onChange(val)
       }}
     />
-  );
+  )
 }

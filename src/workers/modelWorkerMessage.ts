@@ -1,9 +1,9 @@
-import { type ModelSave } from '../services/model/modelService';
-import { type Vector2 } from 'three';
+import { type Vector2 } from 'three'
+import { type ModelSave } from '../services/model/modelService'
 
 export interface IncomingMessage {
-  func: RunnerFunc;
-  args?: InitArgs | DeserializeArgs | UpdateForceArgs;
+  func: RunnerFunc
+  args?: InitArgs | DeserializeArgs | UpdateForceArgs
 }
 
 export enum RunnerFunc {
@@ -16,23 +16,23 @@ export enum RunnerFunc {
 }
 
 export interface InitArgs {
-  modelPath: string;
-  initConditionPath: string;
+  modelPath: string
+  initConditionPath: string
 }
 
 export interface DeserializeArgs {
-  savedState: string | ModelSave;
+  savedState: string | ModelSave
 }
 
 export interface UpdateForceArgs {
-  loc: Vector2;
-  forceDelta: Vector2;
+  loc: Vector2
+  forceDelta: Vector2
 }
 
 export interface OutgoingMessage {
-  type: string;
-  density?: Float32Array[];
-  success: boolean;
-  matrix?: Float32Array;
-  save?: ModelSave;
+  type: string
+  density?: Float32Array[]
+  success: boolean
+  matrix?: Float32Array
+  save?: ModelSave
 }

@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled from 'styled-components'
 
 const ParamButton = styled.button`
   border-radius: 20px;
@@ -10,11 +10,11 @@ const ParamButton = styled.button`
   font-size: 14px;
   border: none;
   cursor: pointer;
-`;
+`
 
 export default function ParameterButton(props: {
-  label: string;
-  onClick?: () => void;
+  label: string
+  onClick?: () => void
 }): JSX.Element {
-  return <ParamButton onClick={props.onClick}>{props.label}</ParamButton>;
+  return <ParamButton onClick={props.onClick}>{props.label}</ParamButton>
 }

@@ -1,10 +1,10 @@
-import { Divider, Menu } from 'antd';
-import { useState } from 'react';
-import styled from 'styled-components';
-import LocalFileRestore from './LocalFileRestore';
-import { type RestoreProps } from './RestoreProps';
-import IndexedDBRestore from './IndexedDBRestore';
-import { CloseOutlined } from '@ant-design/icons';
+import { CloseOutlined } from '@ant-design/icons'
+import { Divider, Menu } from 'antd'
+import { useState } from 'react'
+import styled from 'styled-components'
+import IndexedDBRestore from './IndexedDBRestore'
+import LocalFileRestore from './LocalFileRestore'
+import type { RestoreProps } from './RestoreProps'
 
 const Popup = styled.div`
   position: absolute;
@@ -21,7 +21,7 @@ const Popup = styled.div`
     width: 95%;
     height: 97%;
   }
-`;
+`
 
 const IconButton = styled.button`
   position: absolute;
@@ -31,7 +31,7 @@ const IconButton = styled.button`
   border: none;
   font-size: 1rem;
   cursor: pointer;
-`;
+`
 
 const LeftColumn = styled.div`
   width: 25%;
@@ -46,14 +46,14 @@ const LeftColumn = styled.div`
     float: none;
     height: 30%;
   }
-`;
+`
 const SafeArea = styled.div`
   width: 80%;
   height: 90%;
   overflow: hidden;
   display: flex;
   justify-content: center;
-`;
+`
 
 const RightColumn = styled.div`
   width: 70%;
@@ -68,38 +68,38 @@ const RightColumn = styled.div`
     float: none;
     height: 70%;
   }
-`;
+`
 
 const MenuContainer = styled(Menu)`
   width: 100%;
   height: 100%;
   border: none;
-`;
+`
 
 export default function RestorePopup(props: RestoreProps): JSX.Element {
-  const setRestorePopupVisible = props.setRestorePopupVisible;
-  const [selectedItem, setSelectedItem] = useState('');
+  const setRestorePopupVisible = props.setRestorePopupVisible
+  const [selectedItem, setSelectedItem] = useState('')
 
   const handleItemClick = (item: {
-    key: React.SetStateAction<string>;
+    key: React.SetStateAction<string>
   }): void => {
-    setSelectedItem(item.key);
-  };
+    setSelectedItem(item.key)
+  }
 
   const renderRightColumn = (): React.ReactNode => {
     switch (selectedItem) {
       case 'A':
-        return <LocalFileRestore {...props} />;
+        return <LocalFileRestore {...props} />
       case 'B':
-        return <IndexedDBRestore {...props} />;
+        return <IndexedDBRestore {...props} />
       default:
-        return null;
+        return null
     }
-  };
+  }
 
   const handleCloseClick = (): void => {
-    setRestorePopupVisible(false);
-  };
+    setRestorePopupVisible(false)
+  }
 
   return (
     <Popup id="restore-popup">
@@ -122,5 +122,5 @@ export default function RestorePopup(props: RestoreProps): JSX.Element {
         <SafeArea>{renderRightColumn()}</SafeArea>
       </RightColumn>
     </Popup>
-  );
+  )
 }

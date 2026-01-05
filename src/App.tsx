@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
-import NavBar from './components/NavBar';
-import styled, { ThemeProvider } from 'styled-components';
+import { useEffect, useState } from 'react'
+import styled, { ThemeProvider } from 'styled-components'
+import NavBar from './components/NavBar'
 
-import './App.css';
-import Home from './pages';
-import AboutPage from './pages/about';
-import { SimulationParams } from './components/Simulation';
+import './App.css'
+import { SimulationParams } from './components/Simulation'
+import Home from './pages'
+import AboutPage from './pages/about'
 import {
   type IncomingMessage,
   type InitArgs,
   RunnerFunc,
-} from './workers/modelWorkerMessage';
+} from './workers/modelWorkerMessage'
 
 const Main = styled.main`
   position: absolute;
@@ -18,59 +18,59 @@ const Main = styled.main`
   top: 0;
   width: 100vw;
   height: 100vh;
-  background: ${(props) =>
+  background: ${props =>
     (props.theme.light as boolean) ? '#ffffff' : '#707070'};
   z-index: 0;
-`;
+`
 
 const NavBarContainer = styled.div`
   padding: 0;
   margin: 0;
   box-sizing: border-box;
   font-family: 'Titillium Web', sans-serif;
-`;
+`
 
 function App(): JSX.Element {
   // save the current page in state
   // 0 = home(index,simulation) 1 = about
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(0)
   const [simulationParams, setSimulationParams] = useState<SimulationParams>(
     new SimulationParams(),
-  );
+  )
 
-  const [lightTheme, setLightTheme] = useState<boolean>(false);
+  const [lightTheme, setLightTheme] = useState<boolean>(false)
   // TODO: implement auto theme ui switch
-  const [curThemeMode, setCurThemeMode] = useState<string>('auto'); // 'dark' or 'light' or 'auto'
+  const [curThemeMode, setCurThemeMode] = useState<string>('auto') // 'dark' or 'light' or 'auto'
 
   useEffect(() => {
     if (curThemeMode === 'auto') {
       const darkModeMediaQuery = window.matchMedia(
         '(prefers-color-scheme: dark)',
-      );
-      darkModeMediaQuery.addEventListener('change', (e) => {
-        const newColorScheme = e.matches ? 'dark' : 'light';
-        setLightTheme(newColorScheme === 'light');
-      });
-      setLightTheme(darkModeMediaQuery.matches);
+      )
+      darkModeMediaQuery.addEventListener('change', e => {
+        const newColorScheme = e.matches ? 'dark' : 'light'
+        setLightTheme(newColorScheme === 'light')
+      })
+      setLightTheme(darkModeMediaQuery.matches)
     } else {
-      setLightTheme(curThemeMode === 'light');
+      setLightTheme(curThemeMode === 'light')
     }
-  }, [curThemeMode]);
+  }, [curThemeMode])
 
-  const [simWorker, setSimWorker] = useState<Worker>(null!);
+  const [simWorker, setSimWorker] = useState<Worker>(null!)
   useEffect(() => {
     const worker = new Worker(
       new URL('./workers/modelWorker', import.meta.url),
       {
         type: 'module',
       },
-    );
-    setSimWorker(worker);
+    )
+    setSimWorker(worker)
 
     return () => {
-      worker.terminate();
-    };
-  }, []);
+      worker.terminate()
+    }
+  }, [])
 
   useEffect(() => {
     const message: IncomingMessage = {
@@ -80,16 +80,16 @@ function App(): JSX.Element {
         initConditionPath:
           '/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_0.json',
       } satisfies InitArgs,
-    };
-    if (simWorker === null) return;
-    simWorker.postMessage(message);
-  }, [simWorker]);
+    }
+    if (simWorker === null) return
+    simWorker.postMessage(message)
+  }, [simWorker])
 
-  let mainPageComponent;
+  let mainPageComponent
   switch (page) {
     case 1:
-      mainPageComponent = <AboutPage />;
-      break;
+      mainPageComponent = <AboutPage />
+      break
     case 0:
     default:
       mainPageComponent = (
@@ -98,8 +98,8 @@ function App(): JSX.Element {
           simulationParams={simulationParams}
           setSimulationParams={setSimulationParams}
         />
-      );
-      break;
+      )
+      break
   }
 
   return (
@@ -111,7 +111,7 @@ function App(): JSX.Element {
         {mainPageComponent}
       </Main>
     </ThemeProvider>
-  );
+  )
 }
 
-export default App;
+export default App

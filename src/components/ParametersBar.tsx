@@ -1,30 +1,29 @@
 import {
-  DoubleRightOutlined,
   DoubleLeftOutlined,
+  DoubleRightOutlined,
   DownOutlined,
-} from '@ant-design/icons';
-import styled from 'styled-components';
+} from '@ant-design/icons'
 import {
-  ColorPicker,
-  Col,
-  Space,
-  Row,
   Card,
+  Col,
+  ColorPicker,
   Dropdown,
-  message,
   type MenuProps,
-} from 'antd';
-import { useEffect, useMemo, useState } from 'react';
-import type { Color } from 'antd/es/color-picker';
-import { Color as ThreeColor } from 'three';
-import { type SimulationParams } from './Simulation';
-import { type SpaceSize } from 'antd/es/space';
-
-import ParameterButton from './ParameterComponents/ParameterButton';
-import ParameterLabel from './ParameterComponents/ParameterLabel';
+  message,
+  Row,
+  Space,
+} from 'antd'
+import type { Color } from 'antd/es/color-picker'
+import type { SpaceSize } from 'antd/es/space'
+import { useEffect, useMemo, useState } from 'react'
+import styled from 'styled-components'
+import { Color as ThreeColor } from 'three'
+import ParameterButton from './ParameterComponents/ParameterButton'
+import ParameterLabel from './ParameterComponents/ParameterLabel'
+import type { SimulationParams } from './Simulation'
 
 interface Visible {
-  hidden: boolean;
+  hidden: boolean
 }
 
 const Pane = styled.div<Visible>`
@@ -41,7 +40,7 @@ const Pane = styled.div<Visible>`
     display: none;
   }
   z-index: 1;
-`;
+`
 const Container = styled(Space)<Visible>`
   background-color: #797979;
   color: #fff;
@@ -51,7 +50,7 @@ const Container = styled(Space)<Visible>`
 
   font-size: 2rem;
   position: absolute;
-  left: ${(props) => (props.hidden ? '-20rem' : '0')};
+  left: ${props => (props.hidden ? '-20rem' : '0')};
   display: flex;
 
   text-align: left;
@@ -64,11 +63,11 @@ const Container = styled(Space)<Visible>`
   @media (max-width: 760px) {
     display: none;
   }
-  visibility: ${(props) => (props.hidden ? 'hidden' : 'visible')};
+  visibility: ${props => (props.hidden ? 'hidden' : 'visible')};
   transition:
     left 0.5s linear,
     visibility 0.5s linear;
-`;
+`
 
 const Title = styled.span`
   font-family: 'Roboto', sans-serif;
@@ -77,7 +76,7 @@ const Title = styled.span`
   @media (max-width: 760px) {
     display: none;
   }
-`;
+`
 
 const Category = styled(Card)`
   font-family: 'Roboto', sans-serif;
@@ -85,12 +84,12 @@ const Category = styled(Card)`
   text-align: left;
   font-size: 1rem;
   color: #ffffff;
-`;
+`
 
 const BackButton = styled.button<Visible>`
   position: absolute;
   top: 0.5rem;
-  left: ${(props) => (props.hidden ? '0.5rem' : '22.5rem')};
+  left: ${props => (props.hidden ? '0.5rem' : '22.5rem')};
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 50%;
@@ -101,31 +100,31 @@ const BackButton = styled.button<Visible>`
   cursor: pointer;
   z-index: 100;
   transition: left 0.5s linear;
-`;
+`
 
 const DropdownMenu = styled.a`
   font-family: 'Roboto', sans-serif;
   font-size: 1rem;
   color: #000000;
-`;
+`
 
 function ShowHideButton(props: {
-  isVisible: boolean;
-  setVisible: (inp: boolean) => void;
+  isVisible: boolean
+  setVisible: (inp: boolean) => void
 }): JSX.Element {
-  const isVisible = props.isVisible;
-  const setVisible = props.setVisible;
+  const isVisible = props.isVisible
+  const setVisible = props.setVisible
 
   return (
     <BackButton
       hidden={!isVisible}
       onClick={() => {
-        setVisible(!isVisible);
+        setVisible(!isVisible)
       }}
     >
       {isVisible ? <DoubleLeftOutlined /> : <DoubleRightOutlined />}
     </BackButton>
-  );
+  )
 }
 
 // whether the pane is in expert or easy mode
@@ -135,8 +134,8 @@ enum ControlDifficulty {
 }
 
 const onClick: MenuProps['onClick'] = ({ key }) => {
-  void message.info(`Click on item ${key}`);
-};
+  void message.info(`Click on item ${key}`)
+}
 
 const items: MenuProps['items'] = [
   {
@@ -151,38 +150,38 @@ const items: MenuProps['items'] = [
     label: '3rd menu item',
     key: '3',
   },
-];
+]
 
 export default function ParametersBar(props: {
-  params: SimulationParams;
-  setParams: React.Dispatch<React.SetStateAction<SimulationParams>>;
+  params: SimulationParams
+  setParams: React.Dispatch<React.SetStateAction<SimulationParams>>
 }): JSX.Element {
-  const [containerVisible, setContainerVisible] = useState<boolean>(true);
-  const space: [SpaceSize, SpaceSize] = ['large', 'small'];
+  const [containerVisible, setContainerVisible] = useState<boolean>(true)
+  const space: [SpaceSize, SpaceSize] = ['large', 'small']
 
   // for ease of development, we'll default to expert mode for now
   const [controlDifficulty, setControlDifficulty] = useState<ControlDifficulty>(
     ControlDifficulty.Expert,
-  );
+  )
 
-  const setParams = props.setParams;
+  const setParams = props.setParams
   const [renderHeightMap, setRenderHeightMap] = useState(
     props.params.renderHeightMap,
-  );
+  )
   // try to get the render height map from the params first
   const [isCameraControlMode, setIsCameraControlMode] = useState(
     props.params.isCameraControlMode,
-  );
+  )
 
   useEffect(() => {
-    setParams((prev) => {
+    setParams(prev => {
       return {
         ...prev,
         renderHeightMap,
         isCameraControlMode,
-      };
-    });
-  }, [renderHeightMap, isCameraControlMode, setParams]);
+      }
+    })
+  }, [renderHeightMap, isCameraControlMode, setParams])
 
   return (
     <Pane hidden={!containerVisible}>
@@ -201,7 +200,7 @@ export default function ParametersBar(props: {
             <ParameterButton
               label="Easy mode"
               onClick={() => {
-                setControlDifficulty(ControlDifficulty.Easy);
+                setControlDifficulty(ControlDifficulty.Easy)
               }}
             />
           </Col>
@@ -209,7 +208,7 @@ export default function ParametersBar(props: {
             <ParameterButton
               label="Expert mode"
               onClick={() => {
-                setControlDifficulty(ControlDifficulty.Expert);
+                setControlDifficulty(ControlDifficulty.Expert)
               }}
             />
           </Col>
@@ -236,8 +235,8 @@ export default function ParametersBar(props: {
             <ParameterButton
               label="Flat surface"
               onClick={() => {
-                setIsCameraControlMode(false);
-                setRenderHeightMap(false);
+                setIsCameraControlMode(false)
+                setRenderHeightMap(false)
               }}
             />
           </Col>
@@ -245,7 +244,7 @@ export default function ParametersBar(props: {
             <ParameterButton
               label="Height map"
               onClick={() => {
-                setRenderHeightMap(true);
+                setRenderHeightMap(true)
               }}
             />
           </Col>
@@ -258,7 +257,7 @@ export default function ParametersBar(props: {
             <ParameterButton
               label="Apply force"
               onClick={() => {
-                setIsCameraControlMode(false);
+                setIsCameraControlMode(false)
               }}
             />
           </Col>
@@ -266,7 +265,7 @@ export default function ParametersBar(props: {
             <ParameterButton
               label="Spin camera"
               onClick={() => {
-                setIsCameraControlMode(true);
+                setIsCameraControlMode(true)
               }}
             />
           </Col>
@@ -274,8 +273,8 @@ export default function ParametersBar(props: {
         {/* choose initial model */}
         <Dropdown menu={{ items, onClick }}>
           <DropdownMenu
-            onClick={(e) => {
-              e.preventDefault();
+            onClick={e => {
+              e.preventDefault()
             }}
           >
             <Space>
@@ -288,8 +287,8 @@ export default function ParametersBar(props: {
         {/* choose initial state */}
         <Dropdown menu={{ items, onClick }}>
           <DropdownMenu
-            onClick={(e) => {
-              e.preventDefault();
+            onClick={e => {
+              e.preventDefault()
             }}
           >
             <Space>
@@ -300,45 +299,45 @@ export default function ParametersBar(props: {
         </Dropdown>
       </Container>
     </Pane>
-  );
+  )
 }
 
 // CATEGORIES
 
 // allows the user to change the colour of the simulation
 function SimulationColour(props: {
-  params: SimulationParams;
-  setParams: React.Dispatch<React.SetStateAction<SimulationParams>>;
+  params: SimulationParams
+  setParams: React.Dispatch<React.SetStateAction<SimulationParams>>
 }): JSX.Element {
-  const setParams = props.setParams;
+  const setParams = props.setParams
   // turn the colours into strings for the colour picker
-  const initialColorLow = props.params.densityLowColour.getHexString();
-  const initialColorHigh = props.params.densityHighColour.getHexString();
+  const initialColorLow = props.params.densityLowColour.getHexString()
+  const initialColorHigh = props.params.densityHighColour.getHexString()
   const [colorLow, setColorLow] = useState<Color | string>(
     '#' + initialColorLow,
-  );
+  )
   const [colorHigh, setColorHigh] = useState<Color | string>(
     '#' + initialColorHigh,
-  );
+  )
 
   const colorLowString = useMemo(
     () => (typeof colorLow === 'string' ? colorLow : colorLow.toHexString()),
     [colorLow],
-  );
+  )
   const colorHighString = useMemo(
     () => (typeof colorHigh === 'string' ? colorHigh : colorHigh.toHexString()),
     [colorHigh],
-  );
+  )
 
   useEffect(() => {
-    setParams((prev) => {
+    setParams(prev => {
       return {
         ...prev,
         densityLowColour: new ThreeColor(colorLowString),
         densityHighColour: new ThreeColor(colorHighString),
-      };
-    });
-  }, [colorLowString, colorHighString, setParams]);
+      }
+    })
+  }, [colorLowString, colorHighString, setParams])
 
   return (
     <Category title={'Simulation Colour'}>
@@ -366,5 +365,5 @@ function SimulationColour(props: {
         </Col>
       </Row>
     </Category>
-  );
+  )
 }
