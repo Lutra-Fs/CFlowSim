@@ -1,0 +1,272 @@
+/**
+ * CFlowSim Design System Tokens
+ *
+ * This file defines design tokens for spacing, typography, shadows,
+ * and animations. Colors are preserved from the existing system in main.css.
+ *
+ * ⚠️ DO NOT modify color variables - they are defined in main.css
+ */
+
+/* ============================================
+   SPACING SYSTEM
+   4px base unit for consistent spacing
+   ============================================ */
+
+:root {
+  /* Base spacing unit */
+  --spacing-unit: 4px;
+
+  /* Spacing scale (multiples of base unit) */
+  --spacing-0: 0;
+  --spacing-1: calc(var(--spacing-unit) * 1);
+  /* 4px */
+  --spacing-2: calc(var(--spacing-unit) * 2);
+  /* 8px */
+  --spacing-3: calc(var(--spacing-unit) * 3);
+  /* 12px */
+  --spacing-4: calc(var(--spacing-unit) * 4);
+  /* 16px */
+  --spacing-5: calc(var(--spacing-unit) * 5);
+  /* 20px */
+  --spacing-6: calc(var(--spacing-unit) * 6);
+  /* 24px */
+  --spacing-8: calc(var(--spacing-unit) * 8);
+  /* 32px */
+  --spacing-10: calc(var(--spacing-unit) * 10);
+  /* 40px */
+  --spacing-12: calc(var(--spacing-unit) * 12);
+  /* 48px */
+  --spacing-16: calc(var(--spacing-unit) * 16);
+  /* 64px */
+  --spacing-20: calc(var(--spacing-unit) * 20);
+  /* 80px */
+  --spacing-24: calc(var(--spacing-unit) * 24);
+  /* 96px */
+
+  /* Component-specific padding */
+  --padding-sm: var(--spacing-2);
+  /* 8px */
+  --padding-md: var(--spacing-4);
+  /* 16px */
+  --padding-lg: var(--spacing-6);
+  /* 24px */
+  --padding-xl: var(--spacing-8);
+  /* 32px */
+
+  /* Gap between elements */
+  --gap-xs: 6px;
+  --gap-sm: 12px;
+  --gap-md: 20px;
+  --gap-lg: 32px;
+  --gap-xl: 48px;
+}
+
+/* ============================================
+   TYPOGRAPHY SYSTEM
+   ============================================ */
+
+:root {
+  /* Font families */
+  --font-sans: "Plus Jakarta Sans Variable", sans-serif;
+  --font-display: "Outfit Variable", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Dimensions */
+  --header-height: 4rem;
+  --sidebar-width: 20rem;
+
+  /* Spacing */
+  --spacing-page: 2rem;
+  /* 32px */
+
+  /* Font sizes */
+  --text-xs: 0.75rem;
+  /* 12px */
+  --text-sm: 0.875rem;
+  /* 14px */
+  --text-base: 1rem;
+  /* 16px */
+  --text-lg: 1.125rem;
+  /* 18px */
+  --text-xl: 1.25rem;
+  /* 20px */
+  --text-2xl: 1.5rem;
+  /* 24px */
+  --text-3xl: 1.875rem;
+  /* 30px */
+
+  /* Font weights */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Line heights */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* Letter spacing */
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
+}
+
+/* ============================================
+   SHADOWS
+   Subtle, scientific look (not dramatic)
+   ============================================ */
+
+:root {
+  /* Shadow scale */
+  /* Shadow scale - Premium/Soft */
+  --shadow-sm:
+    0 2px 8px -2px rgb(0 0 0 / 0.05), 0 1px 4px -2px rgb(0 0 0 / 0.02);
+  --shadow-md:
+    0 8px 16px -4px rgb(0 0 0 / 0.08), 0 4px 8px -4px rgb(0 0 0 / 0.04);
+  --shadow-lg:
+    0 20px 32px -8px rgb(0 0 0 / 0.12), 0 12px 16px -8px rgb(0 0 0 / 0.06);
+  --shadow-xl:
+    0 32px 48px -12px rgb(0 0 0 / 0.15), 0 24px 32px -16px rgb(0 0 0 / 0.08);
+
+  /* Inner shadow for inset effects */
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+}
+
+/* Dark mode shadows (more subtle) */
+.dark {
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.3);
+}
+
+/* ============================================
+   BORDER RADIUS
+   Consistent rounded corners
+   ============================================ */
+
+:root {
+  --radius-sm: 0.375rem;
+  /* 6px */
+  --radius-md: 0.625rem;
+  /* 10px */
+  --radius-lg: 0.875rem;
+  /* 14px */
+  --radius-xl: 1.25rem;
+  /* 20px */
+  --radius-2xl: 1.5rem;
+  /* 24px */
+  --radius-full: 9999px;
+  /* Pill/circle */
+}
+
+/* ============================================
+   ANIMATIONS & TRANSITIONS
+   Smooth, consistent motion
+   ============================================ */
+
+:root {
+  /* Duration */
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 500ms;
+
+  /* Easing functions */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   Z-INDEX SCALE
+   Organized layering
+   ============================================ */
+
+:root {
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-fixed: 30;
+  --z-modal-backdrop: 40;
+  --z-modal: 50;
+  --z-popover: 60;
+  --z-tooltip: 70;
+}
+
+/* ============================================
+   LAYOUT
+   Common layout dimensions
+   ============================================ */
+
+:root {
+  /* Sidebar */
+  --sidebar-width: 20rem;
+  /* 320px */
+  --sidebar-width-collapsed: 0;
+
+  /* Control bar */
+  --controlbar-height: 4rem;
+  /* 64px */
+
+  /* Navbar */
+  --navbar-height: 4rem;
+  /* 64px */
+
+  /* Breakpoints (for reference, defined in Tailwind) */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   Convenience classes using design tokens
+   ============================================ */
+
+/* Monospace font for numerical values */
+.font-mono-numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all var(--duration-base) var(--ease-out);
+}
+
+/* Touch-friendly minimum size */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Scientific panel styling */
+.scientific-panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Focus visible for accessibility */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}

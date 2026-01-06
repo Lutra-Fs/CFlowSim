@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react';
+import { type JSX, useState } from 'react'
 
 export default function SliderParameter(props: {
   onChange: (value: number) => void

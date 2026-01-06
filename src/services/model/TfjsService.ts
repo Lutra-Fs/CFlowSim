@@ -215,7 +215,10 @@ export class TfjsService implements ModelService {
 
           // Velocity is stored as [vx, vy] interleaved, need to separate
           const n = velocityData.length / 2
-          if (this.monitorBuffers == null || this.monitorBuffers.density.length !== n) {
+          if (
+            this.monitorBuffers == null ||
+            this.monitorBuffers.density.length !== n
+          ) {
             this.monitorBuffers = {
               density: new Float32Array(n),
               velocityX: new Float32Array(n),

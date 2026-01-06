@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react';
+import { type JSX, useState } from 'react'
 
 export default function ChoiceParameter(props: {
   onChange: (value: string) => void
@@ -19,7 +19,7 @@ export default function ChoiceParameter(props: {
     <div className="my-1 mx-0">
       {rows.map((row, rowIndex) => (
         // eslint-disable-next-line @eslint-react/jsx/no-array-index-key
-        (<div key={`row-${rowIndex}-${row.join('-')}`}>
+        <div key={`row-${rowIndex}-${row.join('-')}`}>
           {row.map(val => (
             <span key={`col-${val}`}>
               <button
@@ -38,8 +38,8 @@ export default function ChoiceParameter(props: {
               </button>
             </span>
           ))}
-        </div>)
+        </div>
       ))}
     </div>
-  );
+  )
 }

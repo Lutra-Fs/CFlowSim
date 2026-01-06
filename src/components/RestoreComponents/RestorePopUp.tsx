@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { useState, type JSX } from 'react';
+import { type JSX, useState } from 'react'
 import { Separator } from '@/components/ui/separator'
 import IndexedDBRestore from './IndexedDBRestore'
 import LocalFileRestore from './LocalFileRestore'

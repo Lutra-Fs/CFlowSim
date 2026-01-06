@@ -14,39 +14,47 @@ export default function NavBar(props: NavBarProps): React.ReactElement<any> {
 
   return (
     <header
-      className={`flex items-center h-20 ${
-        lightTheme
-          ? 'bg-[#004b87] text-[#f5f5f5]'
-          : 'bg-[#142c3f] text-[#9faee5]'
-      }`}
+      className={`flex items-center h-16 w-full px-8 gap-6 justify-between transition-all duration-300 border-b border-white/10 backdrop-blur-md relative z-50 ${lightTheme
+          ? 'bg-[#004b87]/90 text-white shadow-lg'
+          : 'bg-[#142c3f]/90 text-[#9faee5] shadow-lg'
+        }`}
     >
-      <a href="/" className="m-4 text-[#eee] no-underline flex items-center">
+      <a
+        href="/"
+        className="flex items-center gap-3 text-current no-underline hover:opacity-90 transition-opacity"
+      >
         <img
           src="/physics.svg"
-          alt="Physics in the Browser Logo "
+          alt="Physics in the Browser Logo"
           width={50}
           height={50}
-          className="border border-black invert relative w-[65px] h-[65px] text-[#eee]"
+          className="relative w-10 h-10 invert object-contain"
         />
-        <div className="relative left-[1.4rem] bottom-1 font-['Darumadrop_One',cursive] text-[2.3rem]">
+        <div
+          className="text-4xl tracking-wide leading-none -translate-y-[3px]"
+          style={{ fontFamily: '"Darumadrop One", cursive' }}
+        >
           CFlowSim
         </div>
       </a>
+
+      {/* Mobile menu button */}
       <button
         onClick={() => {
           setIsShowExtend(curr => !curr)
         }}
-        className="inline w-8 h-36 bg-none border-none text-white text-2xl absolute right-8 cursor-pointer min-[760px]:hidden"
+        className="inline flex items-center justify-center w-10 h-10 text-white text-2xl cursor-pointer md:hidden hover:bg-white/10 rounded-lg transition-colors"
       >
-        {isShowExtend ? <>&#10005;</> : <>&#8801;</>}
+        {isShowExtend ? <>&#10005;</> : <>&#8803;</>}
       </button>
 
-      <nav className="flex absolute right-4 flex-row items-center mr-8 max-[760px]:hidden">
+      {/* Desktop navigation */}
+      <nav className="hidden md:flex flex-row items-center gap-2">
         <Button
           onClick={() => {
             setPage(0)
           }}
-          className="text-[#eeeeee] bg-[#00a9ce] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
+          className="text-[#eeeeee] bg-[#00a9ce] hover:bg-[#0097b8] h-10 px-6 font-medium tracking-wide shadow-md hover:shadow-lg transition-all"
         >
           Simulations
         </Button>
@@ -54,15 +62,16 @@ export default function NavBar(props: NavBarProps): React.ReactElement<any> {
           onClick={() => {
             setPage(1)
           }}
-          className="text-[#eeeeee] bg-[#00a9ce] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
+          className="text-[#eeeeee] bg-[#00a9ce] hover:bg-[#0097b8] h-10 px-6 font-medium tracking-wide shadow-md hover:shadow-lg transition-all"
         >
           About
         </Button>
+        <div className="w-px h-6 bg-white/20 mx-2" />
         <button
           onClick={() => {
             setCurThemeMode('light')
           }}
-          className="font-['Source_Code_Pro',monospace] text-sm text-black bg-[#f3f3f3] h-[2.7rem] w-[4.5rem] m-0 mx-1 cursor-pointer"
+          className="font-mono text-xs font-semibold text-black bg-[#f3f3f3] hover:bg-white h-9 px-4 rounded-md shadow-sm transition-all"
         >
           Light
         </button>
@@ -70,18 +79,20 @@ export default function NavBar(props: NavBarProps): React.ReactElement<any> {
           onClick={() => {
             setCurThemeMode('dark')
           }}
-          className="font-['Source_Code_Pro',monospace] text-sm text-black bg-[#f3f3f3] h-[2.7rem] w-[4.5rem] m-0 mx-1 cursor-pointer"
+          className="font-mono text-xs font-semibold text-black bg-[#f3f3f3] hover:bg-white h-9 px-4 rounded-md shadow-sm transition-all text-opacity-60 hover:text-opacity-100"
         >
           Dark
         </button>
       </nav>
+
+      {/* Mobile navigation */}
       {isShowExtend ? (
-        <nav className="inline flex-col items-center w-[8.4rem] h-[15rem] absolute top-[4.5rem] right-4 mb-4 min-[760px]:hidden">
+        <nav className="flex flex-col items-center gap-3 w-40 p-4 absolute top-20 right-4 bg-[#142c3f]/95 backdrop-blur-md rounded-xl shadow-xl border border-white/10 md:hidden z-50">
           <Button
             onClick={() => {
               setPage(0)
             }}
-            className="text-[#eeeeee] bg-[#00a9ce] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
+            className="text-[#eeeeee] bg-[#00a9ce] w-full shadow-sm"
           >
             Simulations
           </Button>
@@ -89,15 +100,16 @@ export default function NavBar(props: NavBarProps): React.ReactElement<any> {
             onClick={() => {
               setPage(1)
             }}
-            className="text-[#eeeeee] bg-[#00a9ce] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
+            className="text-[#eeeeee] bg-[#00a9ce] w-full shadow-sm"
           >
             About
           </Button>
+          <div className="w-full h-px bg-white/10 my-1" />
           <button
             onClick={() => {
               setCurThemeMode('light')
             }}
-            className="font-['Source_Code_Pro',monospace] text-sm text-black bg-[#f3f3f3] h-[2.7rem] w-[4.5rem] m-0 mx-1 cursor-pointer"
+            className="font-mono text-xs w-full py-2 bg-[#f3f3f3] text-black rounded-md"
           >
             Light
           </button>
@@ -105,7 +117,7 @@ export default function NavBar(props: NavBarProps): React.ReactElement<any> {
             onClick={() => {
               setCurThemeMode('dark')
             }}
-            className="font-['Source_Code_Pro',monospace] text-sm text-black bg-[#f3f3f3] h-[2.7rem] w-[4.5rem] m-0 mx-1 cursor-pointer"
+            className="font-mono text-xs w-full py-2 bg-[#f3f3f3] text-black rounded-md"
           >
             Dark
           </button>

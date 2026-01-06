@@ -197,7 +197,10 @@ export default class ONNXService implements ModelService {
           if (this.frameNumber % this.monitorSampleInterval === 0) {
             // Extract density and velocity from output (format: [d0, vx0, vy0, d1, vx1, vy1, ...])
             const n = outputData.length / 3
-            if (this.monitorBuffers == null || this.monitorBuffers.density.length !== n) {
+            if (
+              this.monitorBuffers == null ||
+              this.monitorBuffers.density.length !== n
+            ) {
               this.monitorBuffers = {
                 density: new Float32Array(n),
                 velocityX: new Float32Array(n),

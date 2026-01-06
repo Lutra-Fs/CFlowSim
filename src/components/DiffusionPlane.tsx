@@ -1,6 +1,6 @@
 import type { ThreeEvent } from '@react-three/fiber'
-import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useRef, type JSX } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { type JSX, useEffect, useMemo, useRef } from 'react'
 import * as t from 'three'
 import { clamp, mix, texture as textureNode, uniform, vec3 } from 'three/tsl'
 import { RunnerFunc, type UpdateForceArgs } from '../workers/modelWorkerMessage'
@@ -50,6 +50,19 @@ interface DiffusionPlaneProps {
 export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
   const meshRef = useRef<t.Mesh>(null)
   const densityTexture = useMemo(() => createDensityTexture(), [])
+  const { viewport } = useThree()
+  const planeScale = useMemo(() => {
+    const planeAspect = 5 / 4
+    const maxWidth = viewport.width * 0.92
+    const maxHeight = viewport.height * 0.92
+    let width = maxWidth
+    let height = width / planeAspect
+    if (height > maxHeight) {
+      height = maxHeight
+      width = height * planeAspect
+    }
+    return [width, height, 1] as const
+  }, [viewport.height, viewport.width])
 
   // Dispose texture on unmount
   useEffect(() => {
@@ -66,16 +79,20 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     const densityValue = densityTextureNode.r
 
     // Create color uniforms for low and high density colors
-    const lowColorUniform = uniform(vec3(
-      props.params.densityLowColour.r,
-      props.params.densityLowColour.g,
-      props.params.densityLowColour.b,
-    ))
-    const highColorUniform = uniform(vec3(
-      props.params.densityHighColour.r,
-      props.params.densityHighColour.g,
-      props.params.densityHighColour.b,
-    ))
+    const lowColorUniform = uniform(
+      vec3(
+        props.params.densityLowColour.r,
+        props.params.densityLowColour.g,
+        props.params.densityLowColour.b,
+      ),
+    )
+    const highColorUniform = uniform(
+      vec3(
+        props.params.densityHighColour.r,
+        props.params.densityHighColour.g,
+        props.params.densityHighColour.b,
+      ),
+    )
 
     // Normalize density to 0-1 range and interpolate between low and high colors
     const normalizedDensity = clamp(densityValue, 0.0, 1.0)
@@ -101,7 +118,11 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
       const updateFrame = (frame: Float32Array) => {
         // Log a sample of the density data
         const sample = Array.from(frame.slice(0, 5)).map(v => v.toFixed(2))
-        console.log('[DiffusionPlane] Updating texture with density sample:', sample, '...')
+        console.log(
+          '[DiffusionPlane] Updating texture with density sample:',
+          sample,
+          '...',
+        )
 
         updateDensityTexture(densityTexture, frame)
       }
@@ -239,11 +260,12 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     <mesh
       ref={meshRef}
       rotation-x={-Math.PI / 2}
+      scale={planeScale}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
-      <planeGeometry args={[10, 8, segments, segments]} />
+      <planeGeometry args={[1, 1, segments, segments]} />
       <meshBasicNodeMaterial colorNode={colorNode} />
     </mesh>
   )

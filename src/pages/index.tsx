@@ -1,11 +1,11 @@
 import { Canvas, extend, type ThreeToJSXElements } from '@react-three/fiber'
-import { Suspense, useEffect, useMemo, useState, type JSX } from 'react'
+import { type JSX, Suspense, useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three/webgpu'
 import ControlBar from '../components/ControlBar'
 import { DiffusionPlane } from '../components/DiffusionPlane'
-import { SimulationParams } from '../components/SimulationParams'
 import ParBar from '../components/ParametersBar'
 import RestorePopup from '../components/RestoreComponents/RestorePopUp'
+import type { SimulationParams } from '../components/SimulationParams'
 import type { ModelSave } from '../services/model/modelService'
 import {
   type IncomingMessage,
@@ -20,7 +20,7 @@ extend(THREE as any)
 
 // Type declaration for WebGPU types that aren't in ThreeElements
 declare module '@react-three/fiber' {
-  interface ThreeElements extends ThreeToJSXElements<typeof THREE> {}
+  interface ThreeElements extends ThreeToJSXElements<typeof THREE> { }
 }
 
 interface IndexProp {
@@ -31,6 +31,7 @@ interface IndexProp {
 
 export default function Home(props: IndexProp): JSX.Element {
   const { simulationParams, setSimulationParams, worker } = props
+  const [isPanelOpen, setIsPanelOpen] = useState(false)
   useEffect(() => {
     const confirmExit = (e: BeforeUnloadEvent): void => {
       console.log('beforeunload event triggered')
@@ -91,16 +92,23 @@ export default function Home(props: IndexProp): JSX.Element {
 
   return (
     <>
-      <ParBar params={simulationParams} setParams={setSimulationParams} />
-      <div className="relative left-[21rem] top-4 w-[calc(100%-22rem)] h-[calc(100%-7rem)] z-0 max-[760px]:left-[6rem] max-[760px]:top-[6rem] max-[760px]:w-[calc(100vw-12rem)] max-[760px]:h-[calc(100vh-6rem)]">
+      <ParBar
+        params={simulationParams}
+        setParams={setSimulationParams}
+        onOpenChange={setIsPanelOpen}
+      />
+      <div
+        className={`absolute inset-0 z-0 px-6 pt-[calc(var(--header-height)+var(--spacing-4))] pb-24 ${isPanelOpen ? 'pl-[calc(var(--sidebar-width)+var(--spacing-6))]' : ''
+          }`}
+      >
         <Canvas
           shadows
           camera={{
             position: [0, 10, 0],
             fov: 75,
           }}
-          className="bg-transparent"
-          gl={async (props) => {
+          className="h-full w-full bg-transparent"
+          gl={async props => {
             console.log('[DEBUG] Initializing WebGPURenderer...')
             // R3F passes WebGL types, but WebGPURenderer expects WebGPU types
             // Filter out incompatible properties like powerPreference

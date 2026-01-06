@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { clamp, mix, texture as textureNode, uniform, vec3 } from 'three/tsl'
+import { MeshBasicNodeMaterial } from 'three/webgpu'
 
 /**
  * Configuration for creating a fluid visualization material
@@ -28,13 +28,17 @@ export interface FluidMaterialConfig {
 export function createFluidMaterial(
   config: FluidMaterialConfig,
 ): InstanceType<typeof MeshBasicNodeMaterial> {
-  const material =
-    new MeshBasicNodeMaterial() as InstanceType<typeof MeshBasicNodeMaterial> & {
-      colorNode?: any
-      positionNode?: any
-    }
+  const material = new MeshBasicNodeMaterial() as InstanceType<
+    typeof MeshBasicNodeMaterial
+  > & {
+    colorNode?: any
+    positionNode?: any
+  }
 
-  console.log('[DEBUG FluidMaterial] densityTexture data:', config.densityTexture.image.data)
+  console.log(
+    '[DEBUG FluidMaterial] densityTexture data:',
+    config.densityTexture.image.data,
+  )
   console.log('[DEBUG FluidMaterial] lowColor:', config.lowColor)
   console.log('[DEBUG FluidMaterial] highColor:', config.highColor)
 

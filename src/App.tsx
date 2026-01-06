@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { type JSX, useEffect, useState } from 'react'
 import NavBar from './components/NavBar'
 
 import './styles/main.css'
@@ -68,11 +68,11 @@ function AppContent(): JSX.Element {
   }
 
   return (
-    <main className="absolute left-0 top-0 w-screen h-screen bg-gray-700 z-0 data-[theme-light]:bg-white">
-      <div className="p-0 m-0 box-border font-['Titillium_Web',sans-serif]">
-        <NavBar setPage={setPage} setCurThemeMode={setThemeMode} />
+    <main className="flex flex-col w-screen h-screen bg-gray-700 data-[theme-light]:bg-white overflow-hidden">
+      <NavBar setPage={setPage} setCurThemeMode={setThemeMode} />
+      <div className="flex-1 relative w-full h-full overflow-hidden">
+        {mainPageComponent}
       </div>
-      {mainPageComponent}
     </main>
   )
 }

@@ -1,5 +1,7 @@
-import { useEffect, type JSX } from 'react';
+import { type JSX, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import type { ModelSave } from '../services/model/modelService'
 import {
   type IncomingMessage,
@@ -48,57 +50,88 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
     console.log('wrote a save to ' + filename, sav)
   }
 
-  // take a file and send its contents to the worker
-
   return (
     <>
-      <Button
-        onClick={() => {
-          worker.postMessage({
-            func: RunnerFunc.SERIALIZE,
-          } satisfies IncomingMessage)
-        }}
-        className="absolute bottom-16 right-[11rem] text-[#eeeeee] bg-[#555555] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
+      <Card
+        size="sm"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex-row items-center gap-3 px-3 py-2 bg-[#142c3f]/85 text-white border border-white/10 shadow-[var(--shadow-lg)] backdrop-blur-xl z-40"
       >
-        Save Model
-      </Button>
-      <Button
-        onClick={() => {
-          // create a RestorePopup component to handle input
-          setRestorePopupVisible(true)
-        }}
-        className="absolute bottom-16 right-2 text-[#eeeeee] bg-[#555555] h-[3.2rem] w-[8rem] m-0 mx-1 cursor-pointer max-[760px]:mb-1"
-      >
-        Restore Model
-      </Button>
-      <div className="absolute bottom-4 right-4 z-[100] flex gap-1">
-        <Button
-          onClick={() => {
-            worker.postMessage({
-              func: RunnerFunc.START,
-            } satisfies IncomingMessage)
-          }}
-        >
-          Play
-        </Button>
-        <Button
-          onClick={() => {
-            worker.postMessage({
-              func: RunnerFunc.PAUSE,
-            } satisfies IncomingMessage)
-          }}
-        >
-          Pause
-        </Button>
-        <Button onClick={() => {}}>Stop</Button>
-        <Button
-          onClick={() => {
-            worker.terminate()
-          }}
-        >
-          TERMINATE
-        </Button>
-      </div>
+        {/* Playback Controls */}
+        <div className="flex items-center gap-1">
+          <Button
+            onClick={() => {
+              worker.postMessage({
+                func: RunnerFunc.START,
+              } satisfies IncomingMessage)
+            }}
+            size="sm"
+            className="bg-[#00a9ce] hover:bg-[#0097b8] text-white shadow-lg shadow-cyan-900/20 px-5 rounded-xl font-medium tracking-wide transition-all hover:scale-105 active:scale-95"
+          >
+            Play
+          </Button>
+          <Button
+            onClick={() => {
+              worker.postMessage({
+                func: RunnerFunc.PAUSE,
+              } satisfies IncomingMessage)
+            }}
+            size="sm"
+            variant="ghost"
+            className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
+          >
+            Pause
+          </Button>
+          <Button
+            onClick={() => {
+              // TODO: Implement stop functionality
+              console.log('Stop clicked')
+            }}
+            size="sm"
+            variant="ghost"
+            className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
+          >
+            Stop
+          </Button>
+          <Button
+            onClick={() => {
+              worker.terminate()
+            }}
+            size="sm"
+            variant="ghost"
+            className="text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-xl"
+          >
+            Reset
+          </Button>
+        </div>
+
+        <Separator orientation="vertical" className="bg-white/10 mx-1" />
+
+        {/* Save/Restore Controls */}
+        <div className="flex items-center gap-1">
+          <Button
+            onClick={() => {
+              worker.postMessage({
+                func: RunnerFunc.SERIALIZE,
+              } satisfies IncomingMessage)
+            }}
+            size="sm"
+            variant="ghost"
+            className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
+          >
+            Save
+          </Button>
+          <Button
+            onClick={() => {
+              setRestorePopupVisible(true)
+            }}
+            size="sm"
+            variant="ghost"
+            className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
+          >
+            Restore
+          </Button>
+        </div>
+      </Card>
     </>
   )
 }
