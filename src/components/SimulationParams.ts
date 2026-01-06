@@ -8,6 +8,6 @@ export class SimulationParams {
   renderHeightMap: boolean = true
   isCameraControlMode: boolean = true
 
-  // renderer backend: 'webgl' | 'webgpu'
-  rendererBackend: 'webgl' | 'webgpu' = 'webgl'
+  // renderer mode: 'webgl' (force) | 'webgpu' (with fallback)
+  rendererBackend: 'webgl' | 'webgpu' = 'webgpu'
 }

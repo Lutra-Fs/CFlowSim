@@ -31,9 +31,16 @@ interface DiffusionPlaneProps {
   /** Array of output subscribers */
   outputSubs: Array<(density: Float32Array[]) => void>
   /** Web Worker for model computation */
-  worker: Worker
+  worker: Worker | null
   /** Whether interaction is disabled */
   disableInteraction: boolean
+  /** Whether rendering is active */
+  isActive: boolean
+}
+
+type FramePacket = {
+  frame: Float32Array
+  delayMs: number
 }
 
 /**
@@ -58,6 +65,8 @@ interface DiffusionPlaneProps {
 export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
   const meshRef = useRef<t.Mesh>(null)
   const densityTexture = useMemo(() => createDensityTexture(), [])
+  const frameQueueRef = useRef<FramePacket[]>([])
+  const playbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { viewport } = useThree()
   const baseThickness = 0.12
   const planeScale = useMemo(() => {
@@ -155,26 +164,44 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
 
   // Subscribe to density updates from worker
   useEffect(() => {
-    const intervals: NodeJS.Timeout[] = []
+    let isUnmounted = false
 
     const outputSub = (data: Float32Array[]) => {
+      if (!props.isActive) return
       // Copy data to prevent modification
-      data = data.slice(0)
+      const frames = data.slice(0)
 
       // Calculate fps
-      const fps = data.length
+      const fps = frames.length
+      if (fps === 0) return
 
       // Create update function for a single frame
       const updateFrame = (frame: Float32Array) => {
-        // Log a sample of the density data
-        const sample = Array.from(frame.slice(0, 5)).map(v => v.toFixed(2))
-        console.log(
-          '[DiffusionPlane] Updating texture with density sample:',
-          sample,
-          '...',
-        )
-
         updateDensityTexture(densityTexture, frame)
+      }
+
+      const scheduleNext = () => {
+        if (isUnmounted) return
+        if (!props.isActive) {
+          playbackTimerRef.current = null
+          return
+        }
+        const next = frameQueueRef.current.shift()
+        if (!next) {
+          playbackTimerRef.current = null
+          return
+        }
+        updateFrame(next.frame)
+        playbackTimerRef.current = setTimeout(scheduleNext, next.delayMs)
+      }
+
+      const enqueueFrames = (queuedFrames: Float32Array[], delayMs: number) => {
+        for (const frame of queuedFrames) {
+          frameQueueRef.current.push({ frame, delayMs })
+        }
+        if (playbackTimerRef.current === null) {
+          scheduleNext()
+        }
       }
 
       // Handle low fps with interpolation
@@ -183,44 +210,33 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
         const interpMul = Math.ceil((30 - 1) / fps - 1)
 
         // Create interpolated data
-        const interpData: Float32Array[] = []
-        for (let i = 0; i < data.length; i++) {
-          interpData.push(data[i])
-          if (i + 1 < data.length) {
-            const start = data[i]
-            const end = data[i + 1]
-            for (let j = 0; j < interpMul; j++) {
-              const interp = new Float32Array(start.length)
-              for (let k = 0; k < start.length; k++) {
-                interp[k] =
-                  start[k] + ((end[k] - start[k]) * (j + 1)) / (interpMul + 1)
+        if (interpMul > 0) {
+          const interpData: Float32Array[] = []
+          for (let i = 0; i < frames.length; i++) {
+            interpData.push(frames[i])
+            if (i + 1 < frames.length) {
+              const start = frames[i]
+              const end = frames[i + 1]
+              for (let j = 0; j < interpMul; j++) {
+                const interp = new Float32Array(start.length)
+                for (let k = 0; k < start.length; k++) {
+                  interp[k] =
+                    start[k] +
+                    ((end[k] - start[k]) * (j + 1)) / (interpMul + 1)
+                }
+                interpData.push(interp)
               }
-              interpData.push(interp)
             }
           }
+          const intervalMs = 1000 / (frames.length * interpMul)
+          enqueueFrames(interpData, intervalMs)
+          return
         }
-
-        // Render interpolated frames
-        let i = 0
-        const intervalId = setInterval(
-          () => {
-            if (i >= interpData.length) return
-            updateFrame(interpData[i])
-            i++
-          },
-          1000 / (data.length * interpMul),
-        )
-        intervals.push(intervalId)
-      } else {
-        // Render at original fps
-        let i = 0
-        const intervalId = setInterval(() => {
-          if (i >= data.length) return
-          updateFrame(data[i])
-          i++
-        }, 1000 / data.length)
-        intervals.push(intervalId)
       }
+
+      // Render at original fps
+      const intervalMs = 1000 / frames.length
+      enqueueFrames(frames, intervalMs)
     }
 
     // Subscribe to worker output
@@ -228,19 +244,33 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
 
     // Cleanup function: clear intervals and unsubscribe
     return () => {
-      intervals.forEach(clearInterval)
+      isUnmounted = true
+      if (playbackTimerRef.current !== null) {
+        clearTimeout(playbackTimerRef.current)
+      }
+      playbackTimerRef.current = null
+      frameQueueRef.current = []
       const idx = props.outputSubs.indexOf(outputSub)
       if (idx > -1) {
         props.outputSubs.splice(idx, 1)
       }
     }
-  }, [densityTexture, props.outputSubs])
+  }, [densityTexture, props.isActive, props.outputSubs])
+
+  useEffect(() => {
+    if (props.isActive) return
+    if (playbackTimerRef.current !== null) {
+      clearTimeout(playbackTimerRef.current)
+    }
+    playbackTimerRef.current = null
+    frameQueueRef.current = []
+  }, [props.isActive])
 
   // Camera control (fixed top-down view)
   // Fixed camera for flat mode or force application mode
   // Free camera for 3D orbit mode
   useFrame(state => {
-    if (props.disableInteraction) return
+    if (!props.isActive || props.disableInteraction) return
     // Only force camera position when NOT in camera control mode
     if (!props.params.isCameraControlMode) {
       state.camera.position.set(0, 10, 0)
@@ -281,7 +311,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     const gridSize = new t.Vector2(32, 32)
 
     const interval = setInterval(() => {
-      if (props.disableInteraction) return
+      if (!props.isActive || props.disableInteraction) return
       if (!pointMoved.current) return
 
       const forceDelta = new t.Vector2()
@@ -295,6 +325,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
       prevPointPos.current.set(pointPos.current.x, pointPos.current.y)
       pointMoved.current = false
 
+      if (!props.worker) return
       // Send force update to worker
       props.worker.postMessage({
         func: RunnerFunc.UPDATE_FORCE,
@@ -306,42 +337,53 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     }, forceInterval)
 
     return () => clearInterval(interval)
-  }, [props.disableInteraction, props.worker])
+  }, [props.disableInteraction, props.isActive, props.worker])
 
   // Geometry based on render mode
   const segments = props.params.renderHeightMap ? 31 : 1
+
+  if (props.params.renderHeightMap) {
+    return (
+      <group rotation-x={-Math.PI / 2} scale={planeScale}>
+        <mesh
+          ref={meshRef}
+          position={[0, 0, -baseThickness / 2]}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        >
+          <boxGeometry args={[1, 1, baseThickness, segments, segments, 1]} />
+          <meshBasicNodeMaterial
+            key="height"
+            colorNode={colorNode}
+            positionNode={positionNode}
+          />
+        </mesh>
+        {/* OrbitControls for 3D camera control */}
+        {props.params.isCameraControlMode && (
+          <OrbitControls
+            enablePan={false}
+            enableZoom={true}
+            minDistance={5}
+            maxDistance={30}
+            maxPolarAngle={Math.PI / 2} // Don't go below the plane
+          />
+        )}
+      </group>
+    )
+  }
 
   return (
     <group rotation-x={-Math.PI / 2} scale={planeScale}>
       <mesh
         ref={meshRef}
-        position={
-          props.params.renderHeightMap ? [0, 0, -baseThickness / 2] : undefined
-        }
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        {props.params.renderHeightMap ? (
-          <boxGeometry args={[1, 1, baseThickness, segments, segments, 1]} />
-        ) : (
-          <planeGeometry args={[1, 1, segments, segments]} />
-        )}
-        <meshBasicNodeMaterial
-          colorNode={colorNode}
-          positionNode={positionNode}
-        />
+        <planeGeometry args={[1, 1, segments, segments]} />
+        <meshBasicNodeMaterial key="flat" colorNode={densityColorNode} />
       </mesh>
-      {/* OrbitControls for 3D camera control */}
-      {props.params.isCameraControlMode && props.params.renderHeightMap && (
-        <OrbitControls
-          enablePan={false}
-          enableZoom={true}
-          minDistance={5}
-          maxDistance={30}
-          maxPolarAngle={Math.PI / 2} // Don't go below the plane
-        />
-      )}
     </group>
   )
 }

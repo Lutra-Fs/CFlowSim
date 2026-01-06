@@ -22,6 +22,7 @@ const logger = createLogger('modelWorker')
 let modelService: ModelService | null = null
 let autoSaveService: AutoSaveService | null = null
 let modelUrl: string = ''
+let isRunning = false
 
 const modelSaveSchema: JSONSchemaType<ModelSave> = {
   type: 'object',
@@ -84,6 +85,10 @@ export function onmessage(
       if (modelService == null) {
         throw new Error('modelService is null')
       }
+      if (isRunning) {
+        break
+      }
+      isRunning = true
       modelService.startSimulation()
       if (autoSaveService != null) {
         try {
@@ -105,6 +110,10 @@ export function onmessage(
       if (modelService == null) {
         throw new Error('modelService is null')
       }
+      if (!isRunning) {
+        break
+      }
+      isRunning = false
       modelService.pauseSimulation()
       if (autoSaveService != null) {
         autoSaveService.pauseAutoSave()
@@ -221,6 +230,7 @@ function bindCallback(
   const outputStride = 2
   let outputIndex = 0
   const outputCallback = (output: Float32Array): void => {
+    if (!isRunning) return
     logger.debug('Output callback received', { size: output.length })
     outputIndex++
     if (outputIndex % outputStride !== 0) return
@@ -231,6 +241,7 @@ function bindCallback(
     cache.push(density)
   }
   setInterval(() => {
+    if (!isRunning) return
     logger.debug('Cache state', { cachedFrames: cache.length })
     if (cache.length > 0) {
       const transfer = cache.map(frame => frame.buffer)

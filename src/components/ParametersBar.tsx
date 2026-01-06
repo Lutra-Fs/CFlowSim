@@ -30,7 +30,7 @@ export default function ParametersBar(props: {
 
   useEffect(() => {
     props.onOpenChange?.(open)
-  }, [open, props])
+  }, [open, props.onOpenChange])
 
   return (
     <>
@@ -153,40 +153,19 @@ export default function ParametersBar(props: {
                     type="single"
                     value={props.params.renderHeightMap ? 'height' : 'flat'}
                     onValueChange={value => {
-                      console.log(
-                        '[ToggleGroup] onValueChange called with:',
-                        value,
-                      )
                       if (!value || value.length === 0) return
                       // @base-ui/react returns an array, get the first (and only) value
                       const selectedValue = Array.isArray(value)
                         ? value[0]
                         : value
                       const isHeight = selectedValue === 'height'
-                      console.log(
-                        '[ToggleGroup] selectedValue:',
-                        selectedValue,
-                        'isHeight:',
-                        isHeight,
-                      )
-                      setParams(prev => {
-                        console.log(
-                          '[ToggleGroup] prev.renderHeightMap:',
-                          prev.renderHeightMap,
-                        )
-                        const newParams = {
-                          ...prev,
-                          renderHeightMap: isHeight,
-                          isCameraControlMode: isHeight
-                            ? prev.isCameraControlMode
-                            : false,
-                        }
-                        console.log(
-                          '[ToggleGroup] newParams.renderHeightMap:',
-                          newParams.renderHeightMap,
-                        )
-                        return newParams
-                      })
+                      setParams(prev => ({
+                        ...prev,
+                        renderHeightMap: isHeight,
+                        isCameraControlMode: isHeight
+                          ? prev.isCameraControlMode
+                          : false,
+                      }))
                     }}
                     size="sm"
                     className="w-full rounded-lg bg-black/20 p-1"
@@ -207,7 +186,7 @@ export default function ParametersBar(props: {
                 </div>
 
                 <div className="space-y-2">
-                  <ParameterLabel title="Renderer Backend" />
+                  <ParameterLabel title="Renderer Mode" />
                   <ToggleGroup
                     type="single"
                     value={props.params.rendererBackend}
@@ -229,13 +208,13 @@ export default function ParametersBar(props: {
                       value="webgl"
                       className="flex-1 text-[11px] text-white/60 aria-pressed:bg-[#00a9ce] aria-pressed:text-white data-[state=on]:bg-[#00a9ce] data-[state=on]:text-white hover:text-white hover:bg-white/5"
                     >
-                      WebGL
+                      WebGL (force)
                     </ToggleGroupItem>
                     <ToggleGroupItem
                       value="webgpu"
                       className="flex-1 text-[11px] text-white/60 aria-pressed:bg-[#00a9ce] aria-pressed:text-white data-[state=on]:bg-[#00a9ce] data-[state=on]:text-white hover:text-white hover:bg-white/5"
                     >
-                      WebGPU
+                      WebGPU (fallback)
                     </ToggleGroupItem>
                   </ToggleGroup>
                 </div>

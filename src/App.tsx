@@ -2,7 +2,6 @@ import { type JSX, useEffect, useState } from 'react'
 import NavBar from './components/NavBar'
 
 import './styles/main.css'
-import { SimulationParams } from './components/SimulationParams'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Home from './pages'
 import AboutPage from './pages/about'
@@ -16,9 +15,6 @@ function AppContent(): JSX.Element {
   // save the current page in state
   // 0 = home(index,simulation) 1 = about
   const [page, setPage] = useState(0)
-  const [simulationParams, setSimulationParams] = useState<SimulationParams>(
-    new SimulationParams(),
-  )
 
   const [simWorker, setSimWorker] = useState<Worker | null>(null)
   useEffect(() => {
@@ -50,27 +46,22 @@ function AppContent(): JSX.Element {
 
   const { setThemeMode } = useTheme()
 
-  let mainPageComponent: JSX.Element
-  switch (page) {
-    case 1:
-      mainPageComponent = <AboutPage />
-      break
-    default:
-      mainPageComponent = (
-        <Home
-          worker={simWorker}
-          simulationParams={simulationParams}
-          setSimulationParams={setSimulationParams}
-        />
-      )
-      break
-  }
+  const isHomeActive = page === 0
 
   return (
     <main className="flex flex-col w-screen h-screen bg-gray-700 data-[theme-light]:bg-white overflow-hidden">
       <NavBar setPage={setPage} setCurThemeMode={setThemeMode} />
       <div className="flex-1 relative w-full h-full overflow-hidden">
-        {mainPageComponent}
+        <div
+          className={`absolute inset-0 ${isHomeActive ? '' : 'pointer-events-none opacity-0'}`}
+        >
+          <Home worker={simWorker} isActive={isHomeActive} />
+        </div>
+        {!isHomeActive ? (
+          <div className="absolute inset-0">
+            <AboutPage />
+          </div>
+        ) : null}
       </div>
     </main>
   )

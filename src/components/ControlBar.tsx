@@ -10,12 +10,21 @@ import {
 
 interface ControlBarProps {
   modelSaveSubs: Array<(save: ModelSave) => void>
-  worker: Worker
+  worker: Worker | null
   setRestorePopupVisible: React.Dispatch<React.SetStateAction<boolean>>
+  showPerfOverlay: boolean
+  setShowPerfOverlay: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export default function ControlBar(props: ControlBarProps): JSX.Element {
-  const { modelSaveSubs, worker, setRestorePopupVisible } = props
+  const {
+    modelSaveSubs,
+    worker,
+    setRestorePopupVisible,
+    showPerfOverlay,
+    setShowPerfOverlay,
+  } = props
+  const hasWorker = worker !== null
 
   // take the json and have the user download it
   const save = useCallback((sav: ModelSave): void => {
@@ -54,78 +63,100 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
     >
       {/* Playback Controls */}
       <div className="flex items-center gap-1">
-        <Button
-          onClick={() => {
-            worker.postMessage({
-              func: RunnerFunc.START,
-            } satisfies IncomingMessage)
-          }}
-          size="sm"
-          className="bg-[#00a9ce] hover:bg-[#0097b8] text-white shadow-lg shadow-cyan-900/20 px-5 rounded-xl font-medium tracking-wide transition-all hover:scale-105 active:scale-95"
-        >
-          Play
-        </Button>
-        <Button
-          onClick={() => {
-            worker.postMessage({
-              func: RunnerFunc.PAUSE,
-            } satisfies IncomingMessage)
-          }}
-          size="sm"
-          variant="ghost"
-          className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
-        >
-          Pause
-        </Button>
-        <Button
-          onClick={() => {
-            // TODO: Implement stop functionality
-            console.log('Stop clicked')
-          }}
-          size="sm"
-          variant="ghost"
-          className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
-        >
-          Stop
-        </Button>
-        <Button
-          onClick={() => {
-            worker.terminate()
-          }}
-          size="sm"
-          variant="ghost"
-          className="text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-xl"
-        >
-          Reset
-        </Button>
+          <Button
+            onClick={() => {
+              if (!worker) return
+              worker.postMessage({
+                func: RunnerFunc.START,
+              } satisfies IncomingMessage)
+            }}
+            size="sm"
+            className="bg-[#00a9ce] hover:bg-[#0097b8] text-white shadow-lg shadow-cyan-900/20 px-5 rounded-xl font-medium tracking-wide transition-all hover:scale-105 active:scale-95"
+            disabled={!hasWorker}
+          >
+            Play
+          </Button>
+          <Button
+            onClick={() => {
+              if (!worker) return
+              worker.postMessage({
+                func: RunnerFunc.PAUSE,
+              } satisfies IncomingMessage)
+            }}
+            size="sm"
+            variant="ghost"
+            className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
+            disabled={!hasWorker}
+          >
+            Pause
+          </Button>
+          <Button
+            onClick={() => {
+              // TODO: Implement stop functionality
+              console.log('Stop clicked')
+            }}
+            size="sm"
+            variant="ghost"
+            className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
+          >
+            Stop
+          </Button>
+          <Button
+            onClick={() => {
+              if (!worker) return
+              worker.terminate()
+            }}
+            size="sm"
+            variant="ghost"
+            className="text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-xl"
+            disabled={!hasWorker}
+          >
+            Reset
+          </Button>
       </div>
 
       <Separator orientation="vertical" className="bg-white/10 mx-1" />
 
       {/* Save/Restore Controls */}
-      <div className="flex items-center gap-1">
-        <Button
-          onClick={() => {
-            worker.postMessage({
-              func: RunnerFunc.SERIALIZE,
-            } satisfies IncomingMessage)
-          }}
-          size="sm"
-          variant="ghost"
-          className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
-        >
-          Save
-        </Button>
-        <Button
-          onClick={() => {
-            setRestorePopupVisible(true)
-          }}
-          size="sm"
-          variant="ghost"
-          className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
-        >
-          Restore
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            onClick={() => {
+              if (!worker) return
+              worker.postMessage({
+                func: RunnerFunc.SERIALIZE,
+              } satisfies IncomingMessage)
+            }}
+            size="sm"
+            variant="ghost"
+            className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
+            disabled={!hasWorker}
+          >
+            Save
+          </Button>
+          {import.meta.env.DEV ? (
+            <Button
+              onClick={() => {
+                setShowPerfOverlay(prev => !prev)
+              }}
+              size="sm"
+              variant="ghost"
+              className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
+            >
+              Perf {showPerfOverlay ? 'On' : 'Off'}
+            </Button>
+          ) : null}
+          <Button
+            onClick={() => {
+              if (!worker) return
+              setRestorePopupVisible(true)
+            }}
+            size="sm"
+            variant="ghost"
+            className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
+            disabled={!hasWorker}
+          >
+            Restore
+          </Button>
       </div>
     </Card>
   )
