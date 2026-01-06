@@ -1,7 +1,5 @@
 import { defineConfig } from 'vite'
-import glsl from 'vite-plugin-glsl'
 import react from '@vitejs/plugin-react-swc'
-import { plugin as mdPlugin, Mode } from 'vite-plugin-markdown'
 import tailwindcss from '@tailwindcss/vite'
 import {
   copyFileSync,
@@ -71,12 +69,6 @@ function wasmMiddleware(): Plugin {
 export default defineConfig({
   plugins: [
     react(),
-    glsl({
-      include: ['**/*.glsl', '**/*.wgsl'],
-    }),
-    mdPlugin({
-      mode: [Mode.REACT],
-    }),
     tailwindcss(),
     copyOnnxWasmFiles(),
     wasmMiddleware(),

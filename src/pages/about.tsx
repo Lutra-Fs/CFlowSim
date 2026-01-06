@@ -1,5 +1,6 @@
 import type { JSX } from 'react'
-import { ReactComponent } from '../../README.md'
+import readmeContent from '../../README.md?raw'
+import ReactMarkdown from 'react-markdown'
 import { useTheme } from '../contexts/ThemeContext'
 
 export default function AboutPage(): JSX.Element {
@@ -7,11 +8,11 @@ export default function AboutPage(): JSX.Element {
 
   return (
     <div
-      className={`text-justify mx-[20%] mb-[5%] font-['Roboto',sans-serif] [&_a]:no-underline [&_a]:hover:underline [&_a]:active:underline ${
+      className={`h-full text-justify mx-[20%] mb-[5%] font-['Roboto',sans-serif] overflow-y-auto [&_a]:no-underline [&_a]:hover:underline [&_a]:active:underline ${
         lightTheme ? 'bg-white text-[#333333]' : 'bg-[#707070] text-[#c9c9c9]'
       }`}
     >
-      <ReactComponent />
+      <ReactMarkdown>{readmeContent}</ReactMarkdown>
     </div>
   )
 }

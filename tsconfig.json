@@ -20,7 +20,6 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["vite-plugin-glsl/ext"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true
   },
