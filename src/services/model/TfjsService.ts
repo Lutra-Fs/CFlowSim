@@ -2,8 +2,8 @@ import * as tf from '@tensorflow/tfjs'
 import type { Vector2 } from 'three'
 import type { ModelService } from './modelService'
 import '@tensorflow/tfjs-backend-webgpu'
-import { createLogger } from '@/utils/logger'
 import { RegressionMonitor } from '@/services/regression/regressionMonitor'
+import { createLogger } from '@/utils/logger'
 
 // Use a const that gets replaced by Vite at build time
 declare const __DEV__: boolean
@@ -11,7 +11,9 @@ const IS_DEV: boolean = __DEV__
 
 export class TfjsService implements ModelService {
   private logger = createLogger('TfjsService')
-  private monitor = IS_DEV ? new RegressionMonitor() : (null as unknown as RegressionMonitor)
+  private monitor = IS_DEV
+    ? new RegressionMonitor()
+    : (null as unknown as RegressionMonitor)
   private frameNumber = 0
   model!: tf.GraphModel
   gridSize: [number, number]
@@ -64,7 +66,9 @@ export class TfjsService implements ModelService {
   }
 
   loadDataArray(array: number[][][][]): void {
-    this.logger.debug('Loading data array', { shape: `${array.length}x${array[0]?.length}x${array[0]?.[0]?.length}x${array[0]?.[0]?.[0]?.length}` })
+    this.logger.debug('Loading data array', {
+      shape: `${array.length}x${array[0]?.length}x${array[0]?.[0]?.length}x${array[0]?.[0]?.[0]?.length}`,
+    })
     const arrayTensor = tf.tensor4d(
       array,
       [this.batchSize, ...this.gridSize, this.channelSize],
@@ -221,7 +225,13 @@ export class TfjsService implements ModelService {
         const density = densityData.slice(0, n)
 
         this.frameNumber++
-        this.monitor.monitorFrame(density, velocityX, velocityY, inferenceTime, this.logger)
+        this.monitor.monitorFrame(
+          density,
+          velocityX,
+          velocityY,
+          inferenceTime,
+          this.logger,
+        )
       }
 
       this.outputCallback(output?.dataSync() as Float32Array)
@@ -229,7 +239,9 @@ export class TfjsService implements ModelService {
       // set timeout to 0 to allow other tasks to run, like pause and apply force
       setTimeout(() => {
         this.curFrameCountbyLastSecond += 1
-        this.logger.debug('Frame count', { count: this.curFrameCountbyLastSecond })
+        this.logger.debug('Frame count', {
+          count: this.curFrameCountbyLastSecond,
+        })
         this.iterate()
       }, 0)
     })

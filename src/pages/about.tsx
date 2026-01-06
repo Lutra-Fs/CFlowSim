@@ -1,5 +1,7 @@
-import { useTheme } from '../contexts/ThemeContext'
 import { ReactComponent } from '../../README.md'
+import { useTheme } from '../contexts/ThemeContext'
+
+import type { JSX } from "react";
 
 export default function AboutPage(): JSX.Element {
   const { lightTheme } = useTheme()

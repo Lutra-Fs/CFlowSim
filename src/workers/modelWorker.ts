@@ -8,6 +8,7 @@ import {
   type ModelService,
   modelSerialize,
 } from '../services/model/modelService'
+import { createLogger } from '../utils/logger'
 import {
   type DeserializeArgs,
   type IncomingMessage,
@@ -15,7 +16,6 @@ import {
   RunnerFunc,
   type UpdateForceArgs,
 } from './modelWorkerMessage'
-import { createLogger } from '../utils/logger'
 
 const logger = createLogger('modelWorker')
 
@@ -74,7 +74,9 @@ export function onmessage(
             this.postMessage({ type: 'init', success: true })
           })
           .catch(e => {
-            logger.error('Service initialization failed', { error: e instanceof Error ? e.message : String(e) })
+            logger.error('Service initialization failed', {
+              error: e instanceof Error ? e.message : String(e),
+            })
           })
       }
       break

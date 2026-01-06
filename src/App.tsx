@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type JSX } from 'react';
 import NavBar from './components/NavBar'
 
 import './styles/main.css'
-import { SimulationParams } from './components/Simulation'
+import { SimulationParams } from './components/SimulationParams'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Home from './pages'
 import AboutPage from './pages/about'
 import {
@@ -10,7 +11,6 @@ import {
   type InitArgs,
   RunnerFunc,
 } from './workers/modelWorkerMessage'
-import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 
 function AppContent(): JSX.Element {
   // save the current page in state

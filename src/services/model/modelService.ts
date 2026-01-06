@@ -1,8 +1,8 @@
 import type { Vector2 } from 'three'
+import { createLogger } from '@/utils/logger'
 import MockModelService from './MockModelService'
 import ONNXService from './ONNXService'
 import { TfjsService } from './TfjsService'
-import { createLogger } from '@/utils/logger'
 
 const logger = createLogger('modelService')
 

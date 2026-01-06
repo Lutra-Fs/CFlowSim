@@ -12,7 +12,10 @@ enum LogLevel {
 }
 
 class Logger {
-  constructor(private context: string, private minLevel: LogLevel = LogLevel.DEBUG) {}
+  constructor(
+    private context: string,
+    private minLevel: LogLevel = LogLevel.DEBUG,
+  ) {}
 
   private log(level: LogLevel, message: string, data?: unknown): void {
     if (!ENABLED) return
@@ -39,4 +42,3 @@ class Logger {
 
 export const createLogger = (context: string) => new Logger(context)
 export { LogLevel }
-

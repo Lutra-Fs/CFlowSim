@@ -1,17 +1,27 @@
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
-import { useEffect, useMemo, useState } from 'react'
+import { Canvas, extend, type ThreeToJSXElements } from '@react-three/fiber'
+import { Suspense, useEffect, useMemo, useState, type JSX } from 'react'
+import * as THREE from 'three/webgpu'
 import ControlBar from '../components/ControlBar'
+import { DiffusionPlane } from '../components/DiffusionPlane'
+import { SimulationParams } from '../components/SimulationParams'
 import ParBar from '../components/ParametersBar'
 import RestorePopup from '../components/RestoreComponents/RestorePopUp'
-import { DiffusionPlane, type SimulationParams } from '../components/Simulation'
-import { WebGPUSimulation } from '../components/WebGPUSimulation'
 import type { ModelSave } from '../services/model/modelService'
 import {
   type IncomingMessage,
   type OutgoingMessage,
   RunnerFunc,
 } from '../workers/modelWorkerMessage'
+
+// Extend React Three Fiber to support WebGPU materials (v9 syntax)
+// NOTE: Must extend(THREE) not extend({ MeshBasicNodeMaterial: ... }) to avoid TSL compilation errors
+// See: https://discourse.threejs.org/t/tsl-in-react-three-fiber/83862
+extend(THREE as any)
+
+// Type declaration for WebGPU types that aren't in ThreeElements
+declare module '@react-three/fiber' {
+  interface ThreeElements extends ThreeToJSXElements<typeof THREE> {}
+}
 
 interface IndexProp {
   simulationParams: SimulationParams
@@ -83,37 +93,46 @@ export default function Home(props: IndexProp): JSX.Element {
     <>
       <ParBar params={simulationParams} setParams={setSimulationParams} />
       <div className="relative left-[21rem] top-4 w-[calc(100%-22rem)] h-[calc(100%-7rem)] z-0 max-[760px]:left-[6rem] max-[760px]:top-[6rem] max-[760px]:w-[calc(100vw-12rem)] max-[760px]:h-[calc(100vh-6rem)]">
-        {simulationParams.rendererBackend === 'webgpu' ? (
-          // WebGPU rendering (native)
-          <WebGPUSimulation
-            disableInteraction={simulationParams.isCameraControlMode}
-            params={simulationParams}
-            worker={worker}
-            outputSubs={outputSubs}
-          />
-        ) : (
-          // WebGL rendering (Three.js)
-          <Canvas
-            shadows
-            camera={{
-              position: [0, 10, 0],
-              fov: 75,
-            }}
-          >
-            <ambientLight />
-            <OrbitControls
-              target={[0, 0, 0]}
-              enabled={simulationParams.isCameraControlMode}
-            />
+        <Canvas
+          shadows
+          camera={{
+            position: [0, 10, 0],
+            fov: 75,
+          }}
+          className="bg-transparent"
+          gl={async (props) => {
+            console.log('[DEBUG] Initializing WebGPURenderer...')
+            // R3F passes WebGL types, but WebGPURenderer expects WebGPU types
+            // Filter out incompatible properties like powerPreference
+            const { powerPreference: _powerPreference, ...webgpuProps } =
+              props as any
+            const forceWebGL = simulationParams.rendererBackend === 'webgl'
+            const renderer = new THREE.WebGPURenderer({
+              ...webgpuProps,
+              antialias: true,
+              alpha: true,
+              forceWebGL,
+            })
+            await renderer.init()
+            renderer.setClearColor(0x000000, 0)
+            console.log(
+              '[DEBUG] WebGPURenderer backend:',
+              renderer.backend?.constructor?.name,
+              'forceWebGL:',
+              forceWebGL,
+            )
+            return renderer
+          }}
+        >
+          <Suspense fallback={<LoadingSpinner />}>
             <DiffusionPlane
               disableInteraction={simulationParams.isCameraControlMode}
-              position={[0, 0, 0]}
               params={simulationParams}
               worker={worker}
               outputSubs={outputSubs}
             />
-          </Canvas>
-        )}
+          </Suspense>
+        </Canvas>
       </div>
       {restorePopupVisible && (
         <RestorePopup
@@ -127,5 +146,20 @@ export default function Home(props: IndexProp): JSX.Element {
         setRestorePopupVisible={setRestorePopupVisible}
       />
     </>
+  )
+}
+
+/**
+ * Loading spinner component for Suspense fallback
+ * Shows while WebGPU renderer is initializing
+ */
+function LoadingSpinner(): JSX.Element {
+  return (
+    <group position={[0, 0, 0]}>
+      <mesh>
+        <planeGeometry args={[10, 8]} />
+        <meshBasicMaterial color="#333" />
+      </mesh>
+    </group>
   )
 }

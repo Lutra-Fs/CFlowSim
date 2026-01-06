@@ -1,5 +1,11 @@
 import { CircleHelp } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+
+import type { JSX } from "react";
 
 export default function ParameterLabel(props: {
   title: string

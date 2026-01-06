@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type JSX } from 'react';
 
 export default function DropdownParameter(props: {
   onChange: (value: string) => void
@@ -21,10 +21,10 @@ export default function DropdownParameter(props: {
       {props.values.map(val => (
         // use value as key, this asserts that the values are unique
         // CAUTION: this is true when I wrote this, but may not be true in the future
-        <option key={val} value={val}>
+        (<option key={val} value={val}>
           {val}
-        </option>
+        </option>)
       ))}
     </select>
-  )
+  );
 }

@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { useTheme } from '../contexts/ThemeContext'
 
 interface NavBarProps {
@@ -7,7 +7,7 @@ interface NavBarProps {
   setPage: React.Dispatch<React.SetStateAction<number>>
 }
 
-export default function NavBar(props: NavBarProps): React.ReactElement {
+export default function NavBar(props: NavBarProps): React.ReactElement<any> {
   const { setCurThemeMode, setPage } = props
   const [isShowExtend, setIsShowExtend] = useState(false)
   const { lightTheme } = useTheme()
@@ -15,13 +15,12 @@ export default function NavBar(props: NavBarProps): React.ReactElement {
   return (
     <header
       className={`flex items-center h-20 ${
-        lightTheme ? 'bg-[#004b87] text-[#f5f5f5]' : 'bg-[#142c3f] text-[#9faee5]'
+        lightTheme
+          ? 'bg-[#004b87] text-[#f5f5f5]'
+          : 'bg-[#142c3f] text-[#9faee5]'
       }`}
     >
-      <a
-        href="/"
-        className="m-4 text-[#eee] no-underline flex items-center"
-      >
+      <a href="/" className="m-4 text-[#eee] no-underline flex items-center">
         <img
           src="/physics.svg"
           alt="Physics in the Browser Logo "

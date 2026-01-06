@@ -1,8 +1,8 @@
 import * as ort from 'onnxruntime-web/webgpu'
 import type { Vector2 } from 'three'
-import type { ModelService } from './modelService'
-import { createLogger } from '@/utils/logger'
 import { RegressionMonitor } from '@/services/regression/regressionMonitor'
+import { createLogger } from '@/utils/logger'
+import type { ModelService } from './modelService'
 
 // Use a const that gets replaced by Vite at build time
 declare const __DEV__: boolean
@@ -12,7 +12,9 @@ const logger = createLogger('ONNXService')
 
 export default class ONNXService implements ModelService {
   private logger = logger
-  private monitor = IS_DEV ? new RegressionMonitor() : (null as unknown as RegressionMonitor)
+  private monitor = IS_DEV
+    ? new RegressionMonitor()
+    : (null as unknown as RegressionMonitor)
   private frameNumber = 0
   session: ort.InferenceSession | null
   gridSize: [number, number]
@@ -141,7 +143,9 @@ export default class ONNXService implements ModelService {
   }
 
   loadDataArray(data: number[][][][]): void {
-    this.logger.debug('Loading data array', { shape: `${data.length}x${data[0]?.length}x${data[0]?.[0]?.length}x${data[0]?.[0]?.[0]?.length}` })
+    this.logger.debug('Loading data array', {
+      shape: `${data.length}x${data[0]?.length}x${data[0]?.[0]?.length}x${data[0]?.[0]?.[0]?.length}`,
+    })
     this.matrixArray = new Float32Array(data.flat(3))
     this.normalizeMatrix(this.matrixArray)
     if (this.matrixArray.length !== this.tensorSize) {
@@ -208,7 +212,13 @@ export default class ONNXService implements ModelService {
           }
 
           this.frameNumber++
-          this.monitor.monitorFrame(density, velocityX, velocityY, inferenceTime, this.logger)
+          this.monitor.monitorFrame(
+            density,
+            velocityX,
+            velocityY,
+            inferenceTime,
+            this.logger,
+          )
         }
 
         this.outputCallback(outputData)
@@ -218,7 +228,10 @@ export default class ONNXService implements ModelService {
           if (!this.isPaused) {
             if (this.curFrameCountbyLastSecond > this.fpsLimit) {
               this.isPaused = true
-              this.logger.debug('FPS limit reached', { fpsLimit: this.fpsLimit, frameCount: this.curFrameCountbyLastSecond })
+              this.logger.debug('FPS limit reached', {
+                fpsLimit: this.fpsLimit,
+                frameCount: this.curFrameCountbyLastSecond,
+              })
             } else {
               this.iterate()
             }
@@ -226,7 +239,9 @@ export default class ONNXService implements ModelService {
         })
       })
       .catch(e => {
-        this.logger.error('Inference failed', { error: e instanceof Error ? e.message : String(e) })
+        this.logger.error('Inference failed', {
+          error: e instanceof Error ? e.message : String(e),
+        })
         this.isPaused = true
       })
   }
@@ -280,7 +295,11 @@ export default class ONNXService implements ModelService {
     data = this.matrixMap(data, [0, 1], value => Math.max(value, 0), true)
     const sum = this.matrixSum(data, [0, 1], value => value, true)
     const scale = this.mass / sum
-    this.logger.debug('Scaling density', { currentMass: sum, targetMass: this.mass, scale })
+    this.logger.debug('Scaling density', {
+      currentMass: sum,
+      targetMass: this.mass,
+      scale,
+    })
     return this.matrixMap(data, [0, 1], value => value * scale, true)
   }
 
@@ -290,7 +309,11 @@ export default class ONNXService implements ModelService {
   ): Float32Array {
     const curEnergy = this.matrixSum(data, [1, 3], value => value ** 2, true)
     const scale = this.roundFloat(Math.sqrt(inputEnergy / curEnergy), 4)
-    this.logger.debug('Scaling velocity', { currentEnergy: curEnergy, targetEnergy: inputEnergy, scale })
+    this.logger.debug('Scaling velocity', {
+      currentEnergy: curEnergy,
+      targetEnergy: inputEnergy,
+      scale,
+    })
     if (scale >= 1) return data
     return this.matrixMap(data, [1, 3], value => value * scale, true)
   }

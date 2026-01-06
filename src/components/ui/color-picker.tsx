@@ -1,6 +1,10 @@
-import { HexColorPicker } from "react-colorful"
-import { cn } from "@/lib/utils"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { HexColorPicker } from 'react-colorful'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
 
 interface ColorPickerProps {
   value: string
@@ -13,8 +17,8 @@ export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
     <Popover>
       <PopoverTrigger
         className={cn(
-          "w-8 h-8 rounded border-2 border-white/20 shadow-sm cursor-pointer hover:scale-105 transition-transform",
-          className
+          'w-8 h-8 rounded border-2 border-white/20 shadow-sm cursor-pointer hover:scale-105 transition-transform',
+          className,
         )}
         style={{ backgroundColor: value }}
         aria-label={`Change color, current color is ${value}`}

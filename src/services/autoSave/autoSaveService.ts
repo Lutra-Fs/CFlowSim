@@ -2,8 +2,8 @@
 // to IndexedDB
 
 import { type IDBPDatabase, openDB } from 'idb'
-import type { ModelSave } from '../model/modelService'
 import { createLogger } from '@/utils/logger'
+import type { ModelSave } from '../model/modelService'
 
 const logger = createLogger('autoSaveService')
 
@@ -49,7 +49,9 @@ export default class AutoSaveService {
     const autoSave = async (): Promise<void> => {
       try {
         const serialisationData = this.getModelSerialized()
-        logger.debug('Auto-saving model state', { time: serialisationData.time })
+        logger.debug('Auto-saving model state', {
+          time: serialisationData.time,
+        })
         // Save the model to the database
         await this.db.add('modelSave', serialisationData)
         // Check if the total count exceeds maxAutoSaves
@@ -62,13 +64,17 @@ export default class AutoSaveService {
           await this.db.delete('modelSave', earliestModel[0])
         }
       } catch (error) {
-        logger.error('Auto-save failed', { error: error instanceof Error ? error.message : String(error) })
+        logger.error('Auto-save failed', {
+          error: error instanceof Error ? error.message : String(error),
+        })
       }
     }
 
     this.intervalObj = setInterval(() => {
       autoSave().catch(error => {
-        logger.error('Auto-save interval error', { error: error instanceof Error ? error.message : String(error) })
+        logger.error('Auto-save interval error', {
+          error: error instanceof Error ? error.message : String(error),
+        })
       })
     }, this.saveInterval)
   }

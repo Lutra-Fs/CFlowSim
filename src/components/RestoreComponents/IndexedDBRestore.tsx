@@ -1,6 +1,6 @@
-import { Separator } from '@/components/ui/separator'
 import { openDB } from 'idb'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type JSX } from 'react';
+import { Separator } from '@/components/ui/separator'
 import type { ModelSave } from '../../services/model/modelService'
 import {
   type DeserializeArgs,

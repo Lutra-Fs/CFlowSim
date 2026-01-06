@@ -9,7 +9,13 @@ export class StatisticsCollector {
     density: Float32Array,
     velocityX: Float32Array,
     velocityY: Float32Array,
-  ): { mass: number; energy: number; hasNaN: boolean; hasInf: boolean; negativeDensity: boolean } {
+  ): {
+    mass: number
+    energy: number
+    hasNaN: boolean
+    hasInf: boolean
+    negativeDensity: boolean
+  } {
     let mass = 0
     let energy = 0
     let hasNaN = false
@@ -23,7 +29,8 @@ export class StatisticsCollector {
       const vy = velocityY[i]
 
       if (Number.isNaN(d) || Number.isNaN(vx) || Number.isNaN(vy)) hasNaN = true
-      if (!Number.isFinite(d) || !Number.isFinite(vx) || !Number.isFinite(vy)) hasInf = true
+      if (!Number.isFinite(d) || !Number.isFinite(vx) || !Number.isFinite(vy))
+        hasInf = true
       if (d < 0) negativeDensity = true
 
       mass += d
@@ -42,7 +49,10 @@ export class SPCMonitor {
   private readonly sigmaThreshold = 3
 
   // Collect baseline or detect anomalies
-  check(mass: number, energy: number): { massDrift?: boolean; energyDrift?: boolean } {
+  check(
+    mass: number,
+    energy: number,
+  ): { massDrift?: boolean; energyDrift?: boolean } {
     // Collect baseline
     if (this.massValues.length < this.baselineSize) {
       this.massValues.push(mass)
@@ -51,14 +61,18 @@ export class SPCMonitor {
     }
 
     // Calculate baseline statistics
-    const massMean = this.massValues.reduce((a, b) => a + b) / this.massValues.length
+    const massMean =
+      this.massValues.reduce((a, b) => a + b) / this.massValues.length
     const massStd = Math.sqrt(
-      this.massValues.reduce((sum, m) => sum + (m - massMean) ** 2, 0) / this.massValues.length,
+      this.massValues.reduce((sum, m) => sum + (m - massMean) ** 2, 0) /
+        this.massValues.length,
     )
 
-    const energyMean = this.energyValues.reduce((a, b) => a + b) / this.energyValues.length
+    const energyMean =
+      this.energyValues.reduce((a, b) => a + b) / this.energyValues.length
     const energyStd = Math.sqrt(
-      this.energyValues.reduce((sum, e) => sum + (e - energyMean) ** 2, 0) / this.energyValues.length,
+      this.energyValues.reduce((sum, e) => sum + (e - energyMean) ** 2, 0) /
+        this.energyValues.length,
     )
 
     // Calculate z-score
@@ -73,8 +87,10 @@ export class SPCMonitor {
 
   getBaselineStats(): { massMean: number; energyMean: number } | null {
     if (this.massValues.length === 0) return null
-    const massMean = this.massValues.reduce((a, b) => a + b) / this.massValues.length
-    const energyMean = this.energyValues.reduce((a, b) => a + b) / this.energyValues.length
+    const massMean =
+      this.massValues.reduce((a, b) => a + b) / this.massValues.length
+    const energyMean =
+      this.energyValues.reduce((a, b) => a + b) / this.energyValues.length
     return { massMean, energyMean }
   }
 
@@ -103,7 +119,8 @@ export class PerformanceMonitor {
       this.recentTimes.push(inferenceTimeMs)
       if (this.recentTimes.length > 30) this.recentTimes.shift()
 
-      const avgRecent = this.recentTimes.reduce((a, b) => a + b) / this.recentTimes.length
+      const avgRecent =
+        this.recentTimes.reduce((a, b) => a + b) / this.recentTimes.length
       const degradation = (avgRecent - this.baselineTime) / this.baselineTime
 
       return { regression: degradation > 0.2 }
@@ -136,7 +153,9 @@ export class RegressionMonitor {
 
     // 2. Immediate numerical checks
     if (stats.hasNaN || stats.hasInf) {
-      logger.error(`Numerical instability! NaN=${stats.hasNaN}, Inf=${stats.hasInf}`)
+      logger.error(
+        `Numerical instability! NaN=${stats.hasNaN}, Inf=${stats.hasInf}`,
+      )
     }
     if (stats.negativeDensity) {
       logger.warn('Negative density detected')
@@ -147,7 +166,9 @@ export class RegressionMonitor {
     const baseline = this.spc.getBaselineStats()
 
     if (spcResult.massDrift && baseline) {
-      logger.warn(`Mass drift detected: ${stats.mass.toFixed(2)} (baseline: ${baseline.massMean.toFixed(2)})`)
+      logger.warn(
+        `Mass drift detected: ${stats.mass.toFixed(2)} (baseline: ${baseline.massMean.toFixed(2)})`,
+      )
     }
     if (spcResult.energyDrift && baseline) {
       logger.warn(

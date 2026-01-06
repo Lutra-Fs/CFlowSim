@@ -1,5 +1,5 @@
 import { Upload } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type JSX } from 'react';
 import {
   type IncomingMessage,
   RunnerFunc,

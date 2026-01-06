@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
+import { useState, type JSX } from 'react';
 import { Separator } from '@/components/ui/separator'
-import { useState } from 'react'
 import IndexedDBRestore from './IndexedDBRestore'
 import LocalFileRestore from './LocalFileRestore'
 import type { RestoreProps } from './RestoreProps'
@@ -61,7 +61,9 @@ export default function RestorePopup(props: RestoreProps): JSX.Element {
       </div>
       <Separator orientation="vertical" className="h-full" />
       <div className="float-left flex justify-center items-center w-[70%] h-full max-[760px]:w-full max-[760px]:float-none max-[760px]:h-[70%]">
-        <div className="w-[80%] h-[90%] overflow-hidden flex justify-center">{renderRightColumn()}</div>
+        <div className="w-[80%] h-[90%] overflow-hidden flex justify-center">
+          {renderRightColumn()}
+        </div>
       </div>
     </div>
   )

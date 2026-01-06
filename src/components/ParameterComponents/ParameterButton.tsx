@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 export default function ParameterButton(props: {
   label: string
   onClick?: () => void

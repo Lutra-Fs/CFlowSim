@@ -1,26 +1,17 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-} from 'lucide-react'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useEffect, useState, type JSX } from 'react';
+import { Color as ThreeColor } from 'three'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ColorPicker } from '@/components/ui/color-picker'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ColorPicker } from '@/components/ui/color-picker'
-import { useEffect, useState } from 'react'
-import { Color as ThreeColor } from 'three'
 import ParameterButton from './ParameterComponents/ParameterButton'
 import ParameterLabel from './ParameterComponents/ParameterLabel'
-import type { SimulationParams } from './Simulation'
+import type { SimulationParams } from './SimulationParams'
 
 function ShowHideButton(props: {
   isVisible: boolean
@@ -38,7 +29,11 @@ function ShowHideButton(props: {
         isVisible ? 'left-[22.5rem]' : 'left-2'
       }`}
     >
-      {isVisible ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+      {isVisible ? (
+        <ChevronLeft className="h-4 w-4" />
+      ) : (
+        <ChevronRight className="h-4 w-4" />
+      )}
     </button>
   )
 }
@@ -80,7 +75,9 @@ export default function ParametersBar(props: {
   }, [renderHeightMap, isCameraControlMode, setParams])
 
   return (
-    <div className={`absolute w-[22rem] h-[calc(100%-5rem)] text-2xl flex z-1 ${containerVisible ? '' : 'hidden'} max-[760px]:hidden`}>
+    <div
+      className={`absolute w-[22rem] h-[calc(100%-5rem)] text-2xl flex z-1 ${containerVisible ? '' : 'hidden'} max-[760px]:hidden`}
+    >
       <ShowHideButton
         isVisible={containerVisible}
         setVisible={setContainerVisible}
@@ -157,7 +154,9 @@ export default function ParametersBar(props: {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <ParameterButton
-              label={props.params.rendererBackend === 'webgl' ? 'WebGL ✓' : 'WebGL'}
+              label={
+                props.params.rendererBackend === 'webgl' ? 'WebGL ✓' : 'WebGL'
+              }
               onClick={() => {
                 setParams(prev => ({ ...prev, rendererBackend: 'webgl' }))
               }}
@@ -165,17 +164,27 @@ export default function ParametersBar(props: {
           </div>
           <div>
             <ParameterButton
-              label={props.params.rendererBackend === 'webgpu' ? 'WebGPU ✓' : 'WebGPU'}
+              label={
+                props.params.rendererBackend === 'webgpu'
+                  ? 'WebGPU ✓'
+                  : 'WebGPU'
+              }
               onClick={() => {
                 setParams(prev => ({ ...prev, rendererBackend: 'webgpu' }))
               }}
             />
           </div>
         </div>
-        <div className="gap-4" style={renderHeightMap ? {} : { display: 'none' }}>
+        <div
+          className="gap-4"
+          style={renderHeightMap ? {} : { display: 'none' }}
+        >
           <ParameterLabel title="Current Control"></ParameterLabel>
         </div>
-        <div className="grid grid-cols-2 gap-4" style={renderHeightMap ? {} : { display: 'none' }}>
+        <div
+          className="grid grid-cols-2 gap-4"
+          style={renderHeightMap ? {} : { display: 'none' }}
+        >
           <div>
             <ParameterButton
               label="Apply force"
@@ -234,12 +243,8 @@ function SimulationColour(props: {
   // turn the colours into strings for the colour picker
   const initialColorLow = props.params.densityLowColour.getHexString()
   const initialColorHigh = props.params.densityHighColour.getHexString()
-  const [colorLow, setColorLow] = useState<string>(
-    '#' + initialColorLow,
-  )
-  const [colorHigh, setColorHigh] = useState<string>(
-    '#' + initialColorHigh,
-  )
+  const [colorLow, setColorLow] = useState<string>('#' + initialColorLow)
+  const [colorHigh, setColorHigh] = useState<string>('#' + initialColorHigh)
 
   useEffect(() => {
     setParams(prev => {

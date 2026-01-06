@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
 
 interface ThemeContextType {
   lightTheme: boolean
@@ -15,21 +21,29 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (themeMode === 'auto') {
-      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const darkModeMediaQuery = window.matchMedia(
+        '(prefers-color-scheme: dark)',
+      )
       const handleChange = (e: MediaQueryListEvent) => setLightTheme(!e.matches)
       darkModeMediaQuery.addEventListener('change', handleChange)
       setLightTheme(!darkModeMediaQuery.matches)
-      return () => darkModeMediaQuery.removeEventListener('change', handleChange)
+      return () =>
+        darkModeMediaQuery.removeEventListener('change', handleChange)
     }
     setLightTheme(themeMode === 'light')
   }, [themeMode])
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', lightTheme ? 'light' : 'dark')
+    document.documentElement.setAttribute(
+      'data-theme',
+      lightTheme ? 'light' : 'dark',
+    )
   }, [lightTheme])
 
   return (
-    <ThemeContext.Provider value={{ lightTheme, setLightTheme, themeMode, setThemeMode }}>
+    <ThemeContext.Provider
+      value={{ lightTheme, setLightTheme, themeMode, setThemeMode }}
+    >
       {children}
     </ThemeContext.Provider>
   )
