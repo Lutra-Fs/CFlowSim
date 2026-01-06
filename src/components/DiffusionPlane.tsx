@@ -1,8 +1,16 @@
+import { OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useFrame, useThree } from '@react-three/fiber'
 import { type JSX, useEffect, useMemo, useRef } from 'react'
 import * as t from 'three'
-import { clamp, mix, texture as textureNode, uniform, vec3 } from 'three/tsl'
+import {
+  clamp,
+  mix,
+  positionLocal,
+  texture as textureNode,
+  uniform,
+  vec3,
+} from 'three/tsl'
 import { RunnerFunc, type UpdateForceArgs } from '../workers/modelWorkerMessage'
 import {
   createDensityTexture,
@@ -51,6 +59,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
   const meshRef = useRef<t.Mesh>(null)
   const densityTexture = useMemo(() => createDensityTexture(), [])
   const { viewport } = useThree()
+  const baseThickness = 0.12
   const planeScale = useMemo(() => {
     const planeAspect = 5 / 4
     const maxWidth = viewport.width * 0.92
@@ -63,6 +72,9 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     }
     return [width, height, 1] as const
   }, [viewport.height, viewport.width])
+  const baseColor = useMemo(() => {
+    return props.params.densityLowColour.clone().multiplyScalar(0.35)
+  }, [props.params.densityLowColour])
 
   // Dispose texture on unmount
   useEffect(() => {
@@ -72,7 +84,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
   }, [densityTexture])
 
   // Create color node from texture with low/high color interpolation
-  const colorNode = useMemo(() => {
+  const densityColorNode = useMemo(() => {
     // Create texture sampling node directly from texture
     // texture() from 'three/tsl' accepts a Texture and returns a TextureNode
     const densityTextureNode = textureNode(densityTexture)
@@ -102,6 +114,44 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     props.params.densityLowColour,
     props.params.densityHighColour,
   ])
+
+  const colorNode = useMemo(() => {
+    if (!props.params.renderHeightMap) {
+      return densityColorNode
+    }
+
+    // Blend top surface with density colors and keep sides a solid base color.
+    const topThreshold = uniform(baseThickness / 2 - 0.002)
+    const topScale = uniform(1 / 0.002)
+    const topMask = clamp(positionLocal.z.sub(topThreshold).mul(topScale), 0, 1)
+    const baseColorUniform = uniform(
+      vec3(baseColor.r, baseColor.g, baseColor.b),
+    )
+
+    return mix(baseColorUniform, densityColorNode, topMask)
+  }, [baseColor, baseThickness, densityColorNode, props.params.renderHeightMap])
+
+  // Create conditional position node for height map displacement
+  const positionNode = useMemo(() => {
+    // When flat mode: no position node (undefined)
+    if (!props.params.renderHeightMap) {
+      return undefined
+    }
+
+    // When height map mode: displace vertices based on density
+    const densityTextureNode = textureNode(densityTexture)
+    const densityValue = densityTextureNode.r
+    const heightScaleUniform = uniform(20.0)
+    const topThreshold = uniform(baseThickness / 2 - 0.002)
+    const topScale = uniform(1 / 0.002)
+    const topMask = clamp(positionLocal.z.sub(topThreshold).mul(topScale), 0, 1)
+
+    // Displace along local Z (becomes world Y due to mesh rotation)
+    // positionNode expects the full position, so add to positionLocal.
+    return positionLocal.add(
+      vec3(0, 0, densityValue.mul(heightScaleUniform).mul(topMask)),
+    )
+  }, [baseThickness, densityTexture, props.params.renderHeightMap])
 
   // Subscribe to density updates from worker
   useEffect(() => {
@@ -187,10 +237,15 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
   }, [densityTexture, props.outputSubs])
 
   // Camera control (fixed top-down view)
+  // Fixed camera for flat mode or force application mode
+  // Free camera for 3D orbit mode
   useFrame(state => {
     if (props.disableInteraction) return
-    state.camera.position.set(0, 10, 0)
-    state.camera.lookAt(0, 0, 0)
+    // Only force camera position when NOT in camera control mode
+    if (!props.params.isCameraControlMode) {
+      state.camera.position.set(0, 10, 0)
+      state.camera.lookAt(0, 0, 0)
+    }
   })
 
   // Interaction state (stored outside React state for performance)
@@ -257,16 +312,36 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
   const segments = props.params.renderHeightMap ? 31 : 1
 
   return (
-    <mesh
-      ref={meshRef}
-      rotation-x={-Math.PI / 2}
-      scale={planeScale}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-    >
-      <planeGeometry args={[1, 1, segments, segments]} />
-      <meshBasicNodeMaterial colorNode={colorNode} />
-    </mesh>
+    <group rotation-x={-Math.PI / 2} scale={planeScale}>
+      <mesh
+        ref={meshRef}
+        position={
+          props.params.renderHeightMap ? [0, 0, -baseThickness / 2] : undefined
+        }
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
+        {props.params.renderHeightMap ? (
+          <boxGeometry args={[1, 1, baseThickness, segments, segments, 1]} />
+        ) : (
+          <planeGeometry args={[1, 1, segments, segments]} />
+        )}
+        <meshBasicNodeMaterial
+          colorNode={colorNode}
+          positionNode={positionNode}
+        />
+      </mesh>
+      {/* OrbitControls for 3D camera control */}
+      {props.params.isCameraControlMode && props.params.renderHeightMap && (
+        <OrbitControls
+          enablePan={false}
+          enableZoom={true}
+          minDistance={5}
+          maxDistance={30}
+          maxPolarAngle={Math.PI / 2} // Don't go below the plane
+        />
+      )}
+    </group>
   )
 }

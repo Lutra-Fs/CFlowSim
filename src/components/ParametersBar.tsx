@@ -25,24 +25,8 @@ export default function ParametersBar(props: {
   const [controlDifficulty, setControlDifficulty] = useState<'easy' | 'expert'>(
     'expert',
   )
-  const [renderHeightMap, setRenderHeightMap] = useState(
-    props.params.renderHeightMap,
-  )
-  const [isCameraControlMode, setIsCameraControlMode] = useState(
-    props.params.isCameraControlMode,
-  )
 
   const setParams = props.setParams
-
-  useEffect(() => {
-    setParams(prev => {
-      return {
-        ...prev,
-        renderHeightMap,
-        isCameraControlMode,
-      }
-    })
-  }, [renderHeightMap, isCameraControlMode, setParams])
 
   useEffect(() => {
     props.onOpenChange?.(open)
@@ -108,7 +92,12 @@ export default function ParametersBar(props: {
                   type="single"
                   value={controlDifficulty}
                   onValueChange={value => {
-                    if (value) setControlDifficulty(value as 'easy' | 'expert')
+                    if (!value || value.length === 0) return
+                    // @base-ui/react returns an array, get the first (and only) value
+                    const selectedValue = Array.isArray(value)
+                      ? value[0]
+                      : value
+                    setControlDifficulty(selectedValue as 'easy' | 'expert')
                   }}
                   size="sm"
                   className="w-full rounded-lg bg-black/20 p-1"
@@ -162,12 +151,42 @@ export default function ParametersBar(props: {
                   <ParameterLabel title="Rendering mode" />
                   <ToggleGroup
                     type="single"
-                    value={renderHeightMap ? 'height' : 'flat'}
+                    value={props.params.renderHeightMap ? 'height' : 'flat'}
                     onValueChange={value => {
-                      if (!value) return
-                      const isHeight = value === 'height'
-                      setRenderHeightMap(isHeight)
-                      if (!isHeight) setIsCameraControlMode(false)
+                      console.log(
+                        '[ToggleGroup] onValueChange called with:',
+                        value,
+                      )
+                      if (!value || value.length === 0) return
+                      // @base-ui/react returns an array, get the first (and only) value
+                      const selectedValue = Array.isArray(value)
+                        ? value[0]
+                        : value
+                      const isHeight = selectedValue === 'height'
+                      console.log(
+                        '[ToggleGroup] selectedValue:',
+                        selectedValue,
+                        'isHeight:',
+                        isHeight,
+                      )
+                      setParams(prev => {
+                        console.log(
+                          '[ToggleGroup] prev.renderHeightMap:',
+                          prev.renderHeightMap,
+                        )
+                        const newParams = {
+                          ...prev,
+                          renderHeightMap: isHeight,
+                          isCameraControlMode: isHeight
+                            ? prev.isCameraControlMode
+                            : false,
+                        }
+                        console.log(
+                          '[ToggleGroup] newParams.renderHeightMap:',
+                          newParams.renderHeightMap,
+                        )
+                        return newParams
+                      })
                     }}
                     size="sm"
                     className="w-full rounded-lg bg-black/20 p-1"
@@ -193,10 +212,14 @@ export default function ParametersBar(props: {
                     type="single"
                     value={props.params.rendererBackend}
                     onValueChange={value => {
-                      if (!value) return
+                      if (!value || value.length === 0) return
+                      // @base-ui/react returns an array, get the first (and only) value
+                      const selectedValue = Array.isArray(value)
+                        ? value[0]
+                        : value
                       setParams(prev => ({
                         ...prev,
-                        rendererBackend: value as 'webgl' | 'webgpu',
+                        rendererBackend: selectedValue as 'webgl' | 'webgpu',
                       }))
                     }}
                     size="sm"
@@ -217,17 +240,26 @@ export default function ParametersBar(props: {
                   </ToggleGroup>
                 </div>
 
-                {renderHeightMap && (
+                {props.params.renderHeightMap && (
                   <>
                     <Separator className="bg-white/10" />
                     <div className="space-y-2">
                       <ParameterLabel title="Current Control" />
                       <ToggleGroup
                         type="single"
-                        value={isCameraControlMode ? 'camera' : 'force'}
+                        value={
+                          props.params.isCameraControlMode ? 'camera' : 'force'
+                        }
                         onValueChange={value => {
-                          if (!value) return
-                          setIsCameraControlMode(value === 'camera')
+                          if (!value || value.length === 0) return
+                          // @base-ui/react returns an array, get the first (and only) value
+                          const selectedValue = Array.isArray(value)
+                            ? value[0]
+                            : value
+                          setParams(prev => ({
+                            ...prev,
+                            isCameraControlMode: selectedValue === 'camera',
+                          }))
                         }}
                         size="sm"
                         className="w-full rounded-lg bg-black/20 p-1"
