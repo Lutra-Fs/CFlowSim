@@ -7,17 +7,18 @@ interface NavBarProps {
   setPage: React.Dispatch<React.SetStateAction<number>>
 }
 
-export default function NavBar(props: NavBarProps): React.ReactElement<any> {
+export default function NavBar(props: NavBarProps): JSX.Element {
   const { setCurThemeMode, setPage } = props
   const [isShowExtend, setIsShowExtend] = useState(false)
   const { lightTheme } = useTheme()
 
   return (
     <header
-      className={`flex items-center h-16 w-full px-8 gap-6 justify-between transition-all duration-300 border-b border-white/10 backdrop-blur-md relative z-50 ${lightTheme
+      className={`flex items-center h-16 w-full px-8 gap-6 justify-between transition-all duration-300 border-b border-white/10 backdrop-blur-md relative z-50 ${
+        lightTheme
           ? 'bg-[#004b87]/90 text-white shadow-lg'
           : 'bg-[#142c3f]/90 text-[#9faee5] shadow-lg'
-        }`}
+      }`}
     >
       <a
         href="/"
@@ -40,6 +41,7 @@ export default function NavBar(props: NavBarProps): React.ReactElement<any> {
 
       {/* Mobile menu button */}
       <button
+        type="button"
         onClick={() => {
           setIsShowExtend(curr => !curr)
         }}
@@ -68,6 +70,7 @@ export default function NavBar(props: NavBarProps): React.ReactElement<any> {
         </Button>
         <div className="w-px h-6 bg-white/20 mx-2" />
         <button
+          type="button"
           onClick={() => {
             setCurThemeMode('light')
           }}
@@ -76,6 +79,7 @@ export default function NavBar(props: NavBarProps): React.ReactElement<any> {
           Light
         </button>
         <button
+          type="button"
           onClick={() => {
             setCurThemeMode('dark')
           }}
@@ -106,6 +110,7 @@ export default function NavBar(props: NavBarProps): React.ReactElement<any> {
           </Button>
           <div className="w-full h-px bg-white/10 my-1" />
           <button
+            type="button"
             onClick={() => {
               setCurThemeMode('light')
             }}
@@ -114,6 +119,7 @@ export default function NavBar(props: NavBarProps): React.ReactElement<any> {
             Light
           </button>
           <button
+            type="button"
             onClick={() => {
               setCurThemeMode('dark')
             }}

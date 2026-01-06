@@ -59,15 +59,16 @@ export default function IndexedDBRestore(props: RestoreProps): JSX.Element {
       <Separator />
       <div className="border rounded-md mt-2">
         {keys.map(key => (
-          <div
+          <button
             key={key}
+            type="button"
             onClick={() => {
               handleSelect(key)
             }}
-            className="p-3 border-b last:border-b-0 hover:bg-gray-100 cursor-pointer"
+            className="w-full text-left p-3 border-b last:border-b-0 hover:bg-gray-100 cursor-pointer"
           >
             <span className="text-sm">{key}</span>
-          </div>
+          </button>
         ))}
       </div>
     </div>

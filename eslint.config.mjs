@@ -1,14 +1,14 @@
-import biome from 'eslint-config-biome';
-import { includeIgnoreFile } from '@eslint/compat';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import tseslint from 'typescript-eslint';
-import js from '@eslint/js';
-import react from '@eslint-react/eslint-plugin';
-import importPlugin from 'eslint-plugin-import';
+import biome from 'eslint-config-biome'
+import { includeIgnoreFile } from '@eslint/compat'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import tseslint from 'typescript-eslint'
+import js from '@eslint/js'
+import react from '@eslint-react/eslint-plugin'
+import importPlugin from 'eslint-plugin-import'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 export default [
   // Include gitignore patterns
@@ -51,7 +51,10 @@ export default [
       ],
 
       // React Fast Refresh (not in Biome or eslint-react)
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
 
       // Import rules (not in Biome)
       'import/no-named-as-default': 'off',
@@ -60,4 +63,4 @@ export default [
   {
     ignores: ['dist', 'node_modules', 'src/workers/**/*'],
   },
-];
+]

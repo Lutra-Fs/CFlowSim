@@ -8,6 +8,12 @@
     "lineEnding": "lf",
     "lineWidth": 80
   },
+  "css": {
+    "parser": {
+      "cssModules": false,
+      "tailwindDirectives": true
+    }
+  },
   "javascript": {
     "formatter": {
       "jsxQuoteStyle": "double",
@@ -34,8 +40,25 @@
   },
   "overrides": [
     {
+      "includes": ["src/components/ui/**/*"],
+      "linter": {
+        "rules": {
+          "a11y": "off",
+          "suspicious": {
+            "noArrayIndexKey": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["src/workers/**/*"],
       "linter": {
+        "enabled": false
+      }
+    },
+    {
+      "includes": ["public/**/*"],
+      "formatter": {
         "enabled": false
       }
     }

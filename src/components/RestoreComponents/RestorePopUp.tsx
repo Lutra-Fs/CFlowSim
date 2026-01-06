@@ -36,6 +36,7 @@ export default function RestorePopup(props: RestoreProps): JSX.Element {
       className="absolute top-1/2 left-1/2 w-[60%] h-[80%] bg-white rounded-[1rem] -translate-x-1/2 -translate-y-1/2 z-[100] max-[760px]:w-[95%] max-[760px]:h-[97%]"
     >
       <button
+        type="button"
         onClick={handleCloseClick}
         className="absolute top-2 right-2 bg-transparent border-none text-base cursor-pointer"
       >
@@ -45,12 +46,14 @@ export default function RestorePopup(props: RestoreProps): JSX.Element {
         <div className="w-[80%] h-[90%] overflow-hidden flex justify-center">
           <div className="w-full h-full flex flex-col">
             <button
+              type="button"
               onClick={() => handleItemClick({ key: 'A' })}
               className={`w-full text-left p-2 border-b ${selectedItem === 'A' ? 'bg-gray-200' : ''}`}
             >
               Local PC
             </button>
             <button
+              type="button"
               onClick={() => handleItemClick({ key: 'B' })}
               className={`w-full text-left p-2 ${selectedItem === 'B' ? 'bg-gray-200' : ''}`}
             >

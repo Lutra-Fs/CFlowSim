@@ -31,7 +31,9 @@ export function createFluidMaterial(
   const material = new MeshBasicNodeMaterial() as InstanceType<
     typeof MeshBasicNodeMaterial
   > & {
+    // biome-ignore lint/suspicious/noExplicitAny: TSL node types not exported by three/tsl
     colorNode?: any
+    // biome-ignore lint/suspicious/noExplicitAny: TSL node types not exported by three/tsl
     positionNode?: any
   }
 

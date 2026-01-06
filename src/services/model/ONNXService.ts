@@ -178,14 +178,14 @@ export default class ONNXService implements ModelService {
       .then(outputs => {
         // check if the output canbe downcasted to Float32Array
         if (
-          outputs[this.session!.outputNames[0]] === undefined ||
-          !(outputs[this.session!.outputNames[0]].data instanceof Float32Array)
+          outputs[this.session?.outputNames[0]] === undefined ||
+          !(outputs[this.session?.outputNames[0]].data instanceof Float32Array)
         ) {
           throw new Error('output data is not Float32Array')
         }
 
         const outputData = this.constrainOutput(
-          outputs[this.session!.outputNames[0]].data as Float32Array,
+          outputs[this.session?.outputNames[0]].data as Float32Array,
           inputEnergy,
         )
 

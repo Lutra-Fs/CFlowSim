@@ -16,11 +16,12 @@ import {
 // Extend React Three Fiber to support WebGPU materials (v9 syntax)
 // NOTE: Must extend(THREE) not extend({ MeshBasicNodeMaterial: ... }) to avoid TSL compilation errors
 // See: https://discourse.threejs.org/t/tsl-in-react-three-fiber/83862
+// biome-ignore lint/suspicious/noExplicitAny: Required for R3F WebGPU support - THREE types incompatible with extend()
 extend(THREE as any)
 
 // Type declaration for WebGPU types that aren't in ThreeElements
 declare module '@react-three/fiber' {
-  interface ThreeElements extends ThreeToJSXElements<typeof THREE> { }
+  interface ThreeElements extends ThreeToJSXElements<typeof THREE> {}
 }
 
 interface IndexProp {
@@ -79,7 +80,10 @@ export default function Home(props: IndexProp): JSX.Element {
                 throw new Error(
                   'error in calling worker.modelSave, data was null',
                 )
-              x(data.save!)
+              if (!data.save) {
+                throw new Error('data.save is undefined')
+              }
+              x(data.save)
             }
             break
         }
@@ -98,8 +102,9 @@ export default function Home(props: IndexProp): JSX.Element {
         onOpenChange={setIsPanelOpen}
       />
       <div
-        className={`absolute inset-0 z-0 px-6 pt-[calc(var(--header-height)+var(--spacing-4))] pb-24 ${isPanelOpen ? 'pl-[calc(var(--sidebar-width)+var(--spacing-6))]' : ''
-          }`}
+        className={`absolute inset-0 z-0 px-6 pt-[calc(var(--header-height)+var(--spacing-4))] pb-24 ${
+          isPanelOpen ? 'pl-[calc(var(--sidebar-width)+var(--spacing-6))]' : ''
+        }`}
       >
         <Canvas
           shadows
@@ -113,6 +118,7 @@ export default function Home(props: IndexProp): JSX.Element {
             // R3F passes WebGL types, but WebGPURenderer expects WebGPU types
             // Filter out incompatible properties like powerPreference
             const { powerPreference: _powerPreference, ...webgpuProps } =
+              // biome-ignore lint/suspicious/noExplicitAny: WebGPURenderer expects different props than WebGL renderer
               props as any
             const forceWebGL = simulationParams.rendererBackend === 'webgl'
             const renderer = new THREE.WebGPURenderer({

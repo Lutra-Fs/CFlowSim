@@ -22,9 +22,9 @@ export default function ParametersBar(props: {
   onOpenChange?: (open: boolean) => void
 }): JSX.Element {
   const [open, setOpen] = useState<boolean>(false)
-  const [controlDifficulty, setControlDifficulty] = useState<
-    'easy' | 'expert'
-  >('expert')
+  const [controlDifficulty, setControlDifficulty] = useState<'easy' | 'expert'>(
+    'expert',
+  )
   const [renderHeightMap, setRenderHeightMap] = useState(
     props.params.renderHeightMap,
   )
@@ -66,8 +66,9 @@ export default function ParametersBar(props: {
       {/* Parameters panel */}
       <div
         id="parameters-panel"
-        className={`absolute top-0 left-0 h-full w-[var(--sidebar-width)] bg-[#142c3f]/85 backdrop-blur-xl border-r border-white/10 text-white transition-transform duration-300 z-40 shadow-[var(--shadow-xl)] ${open ? 'translate-x-0' : '-translate-x-full'
-          }`}
+        className={`absolute top-0 left-0 h-full w-[var(--sidebar-width)] bg-[#142c3f]/85 backdrop-blur-xl border-r border-white/10 text-white transition-transform duration-300 z-40 shadow-[var(--shadow-xl)] ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
         <ScrollArea className="h-full">
           <div className="flex flex-col gap-4 px-4 pb-8 pt-[calc(var(--header-height)+var(--spacing-3))]">
@@ -326,8 +327,8 @@ function SimulationColour(props: {
   const setParams = props.setParams
   const initialColorLow = props.params.densityLowColour.getHexString()
   const initialColorHigh = props.params.densityHighColour.getHexString()
-  const [colorLow, setColorLow] = useState<string>('#' + initialColorLow)
-  const [colorHigh, setColorHigh] = useState<string>('#' + initialColorHigh)
+  const [colorLow, setColorLow] = useState<string>(`#${initialColorLow}`)
+  const [colorHigh, setColorHigh] = useState<string>(`#${initialColorHigh}`)
 
   useEffect(() => {
     setParams(prev => {

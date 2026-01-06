@@ -23,6 +23,7 @@ export default function ChoiceParameter(props: {
           {row.map(val => (
             <span key={`col-${val}`}>
               <button
+                type="button"
                 data-value={val}
                 onClick={() => {
                   setValue(val)

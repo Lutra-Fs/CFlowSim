@@ -63,7 +63,8 @@ export default function LocalFileRestore(props: RestoreProps): JSX.Element {
 
   return (
     <div className="w-full h-full z-[100]">
-      <div
+      <section
+        aria-label="File upload area"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -88,7 +89,7 @@ export default function LocalFileRestore(props: RestoreProps): JSX.Element {
         >
           Click to browse
         </label>
-      </div>
+      </section>
     </div>
   )
 }

@@ -20,7 +20,7 @@ function AppContent(): JSX.Element {
     new SimulationParams(),
   )
 
-  const [simWorker, setSimWorker] = useState<Worker>(null!)
+  const [simWorker, setSimWorker] = useState<Worker | null>(null)
   useEffect(() => {
     const worker = new Worker(
       new URL('./workers/modelWorker', import.meta.url),
@@ -50,12 +50,11 @@ function AppContent(): JSX.Element {
 
   const { setThemeMode } = useTheme()
 
-  let mainPageComponent
+  let mainPageComponent: JSX.Element
   switch (page) {
     case 1:
       mainPageComponent = <AboutPage />
       break
-    case 0:
     default:
       mainPageComponent = (
         <Home

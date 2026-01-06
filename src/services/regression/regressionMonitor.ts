@@ -1,11 +1,14 @@
 // Statistical collector for physical properties from simulation state
 
+// Logger interface for regression monitoring
+type Logger = Pick<Console, 'error' | 'warn' | 'log' | 'info'>
+
 // Use a const that gets replaced by Vite at build time
 declare const __DEV__: boolean
 const ENABLED: boolean = __DEV__
 
-export class StatisticsCollector {
-  static collect(
+export const StatisticsCollector = {
+  collect(
     density: Float32Array,
     velocityX: Float32Array,
     velocityY: Float32Array,
@@ -38,7 +41,7 @@ export class StatisticsCollector {
     }
 
     return { mass, energy, hasNaN, hasInf, negativeDensity }
-  }
+  },
 }
 
 // SPC monitor: Statistical Process Control for anomaly detection
@@ -144,7 +147,7 @@ export class RegressionMonitor {
     velocityX: Float32Array,
     velocityY: Float32Array,
     inferenceTimeMs: number,
-    logger: any,
+    logger: Logger,
   ): void {
     if (!ENABLED) return
 

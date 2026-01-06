@@ -11,7 +11,11 @@ if (process.env.NODE_ENV === 'development') {
   })
 }
 // eslint-disable-next-line import/no-named-as-default-member
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root')
+if (!rootElement) {
+  throw new Error('Failed to find the root element')
+}
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,

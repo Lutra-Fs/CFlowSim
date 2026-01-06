@@ -1,11 +1,17 @@
-import { defineConfig } from 'vite';
-import glsl from 'vite-plugin-glsl';
-import react from '@vitejs/plugin-react-swc';
-import { plugin as mdPlugin, Mode } from 'vite-plugin-markdown';
-import tailwindcss from '@tailwindcss/vite';
-import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
-import type { Plugin } from 'vite';
+import { defineConfig } from 'vite'
+import glsl from 'vite-plugin-glsl'
+import react from '@vitejs/plugin-react-swc'
+import { plugin as mdPlugin, Mode } from 'vite-plugin-markdown'
+import tailwindcss from '@tailwindcss/vite'
+import {
+  copyFileSync,
+  mkdirSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from 'fs'
+import { resolve } from 'path'
+import type { Plugin } from 'vite'
 
 // Plugin to copy ONNX Runtime WASM files without hash to dist/assets
 function copyOnnxWasmFiles(): Plugin {
@@ -17,25 +23,25 @@ function copyOnnxWasmFiles(): Plugin {
         'ort-wasm-simd-threaded.asyncify.wasm',
         'ort-wasm-simd-threaded.mjs',
         'ort-wasm-simd-threaded.wasm',
-      ];
+      ]
 
-      const sourceDir = resolve(__dirname, 'node_modules/onnxruntime-web/dist');
-      const targetDir = resolve(__dirname, 'dist/assets');
+      const sourceDir = resolve(__dirname, 'node_modules/onnxruntime-web/dist')
+      const targetDir = resolve(__dirname, 'dist/assets')
 
       if (!existsSync(targetDir)) {
-        mkdirSync(targetDir, { recursive: true });
+        mkdirSync(targetDir, { recursive: true })
       }
 
       for (const file of files) {
-        const sourcePath = resolve(sourceDir, file);
-        const targetPath = resolve(targetDir, file);
+        const sourcePath = resolve(sourceDir, file)
+        const targetPath = resolve(targetDir, file)
         if (existsSync(sourcePath)) {
-          copyFileSync(sourcePath, targetPath);
-          console.log(`Copied ${file} to dist/assets/`);
+          copyFileSync(sourcePath, targetPath)
+          console.log(`Copied ${file} to dist/assets/`)
         }
       }
     },
-  };
+  }
 }
 
 // Middleware to serve WASM files with correct MIME type
@@ -45,20 +51,20 @@ function wasmMiddleware(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         if (req.url?.endsWith('.wasm')) {
-          res.setHeader('Content-Type', 'application/wasm');
+          res.setHeader('Content-Type', 'application/wasm')
         }
-        next();
-      });
+        next()
+      })
     },
     configurePreviewServer(server) {
       server.middlewares.use((req, res, next) => {
         if (req.url?.endsWith('.wasm')) {
-          res.setHeader('Content-Type', 'application/wasm');
+          res.setHeader('Content-Type', 'application/wasm')
         }
-        next();
-      });
+        next()
+      })
     },
-  };
+  }
 }
 
 // https://vitejs.dev/config/
@@ -109,4 +115,4 @@ export default defineConfig({
       allow: ['..'],
     },
   },
-});
+})
