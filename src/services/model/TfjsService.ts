@@ -8,6 +8,8 @@ import { createLogger } from '@/utils/logger'
 // Use a const that gets replaced by Vite at build time
 declare const __DEV__: boolean
 const IS_DEV: boolean = __DEV__
+const EPS = 1e-6
+const MAX_DENSITY_SCALE = 10
 
 export class TfjsService implements ModelService {
   private logger = createLogger('TfjsService')
@@ -15,6 +17,12 @@ export class TfjsService implements ModelService {
     ? new RegressionMonitor()
     : (null as unknown as RegressionMonitor)
   private frameNumber = 0
+  private monitorSampleInterval = 5
+  private monitorBuffers: {
+    density: Float32Array
+    velocityX: Float32Array
+    velocityY: Float32Array
+  } | null = null
   model!: tf.GraphModel
   gridSize: [number, number]
   batchSize: number
@@ -27,7 +35,6 @@ export class TfjsService implements ModelService {
   pressure!: tf.TensorBuffer<tf.Rank.R4>
 
   isPaused: boolean
-  curFrameCountbyLastSecond: number
   private outputCallback!: (data: Float32Array) => void
 
   constructor() {
@@ -41,7 +48,6 @@ export class TfjsService implements ModelService {
     this.channelSize = 0
     this.outputChannelSize = 0
     this.fpsLimit = 30
-    this.curFrameCountbyLastSecond = 0
   }
 
   static async createService(
@@ -125,7 +131,8 @@ export class TfjsService implements ModelService {
   static normalizeTensor(tensor: tf.Tensor): tf.Tensor {
     return tf.tidy(() => {
       const { mean, variance } = tf.moments(tensor)
-      return tensor.sub(mean).div(variance.sqrt())
+      const epsilon = tf.scalar(EPS)
+      return tensor.sub(mean).div(variance.add(epsilon).sqrt())
     })
   }
 
@@ -139,20 +146,7 @@ export class TfjsService implements ModelService {
 
   startSimulation(): void {
     this.isPaused = false
-    this.curFrameCountbyLastSecond = 0
-    this.fpsHeartbeat()
     this.iterate()
-  }
-
-  private fpsHeartbeat(): void {
-    setTimeout(() => {
-      this.curFrameCountbyLastSecond = 0
-      if (this.curFrameCountbyLastSecond >= this.fpsLimit) {
-        this.startSimulation()
-      } else {
-        this.fpsHeartbeat()
-      }
-    }, 1000)
   }
 
   getInput(): tf.Tensor<tf.Rank> {
@@ -166,7 +160,6 @@ export class TfjsService implements ModelService {
     if (this.isPaused) {
       return
     }
-    this.curFrameCountbyLastSecond += 1
     const input = this.getInput()
     const startTime = performance.now()
     const energy = this.velocity.square().sum()
@@ -188,62 +181,76 @@ export class TfjsService implements ModelService {
       )
       // update density, velocity
       const newEnergy = this.velocity.square().sum()
-      const energyScale = energy.div(newEnergy)
-      const energyValue = energyScale.dataSync()[0]
-      this.logger.debug('Energy scale', { energyScale: energyValue })
-
-      this.velocity.assign(this.velocity.mul(energyScale.sqrt()))
+      tf.tidy(() => {
+        const energyScale = energy.div(newEnergy)
+        const energyScaleCapped = tf.minimum(energyScale, tf.scalar(1))
+        const energyValue = energyScaleCapped.dataSync()[0]
+        this.logger.debug('Energy scale', { energyScale: energyValue })
+        this.velocity.assign(this.velocity.mul(energyScaleCapped.sqrt()))
+      })
       const newMass = this.density.sum()
-      const massScale = this.mass.div(newMass)
-      this.density.assign(this.density.mul(massScale))
-      const massValue = massScale.dataSync()[0]
-      this.logger.debug('Mass scale', { massScale: massValue })
+      tf.tidy(() => {
+        const massScale = this.mass.div(tf.maximum(newMass, tf.scalar(EPS)))
+        const massScaleCapped = tf.minimum(
+          massScale,
+          tf.scalar(MAX_DENSITY_SCALE),
+        )
+        this.density.assign(this.density.mul(massScaleCapped))
+        const massValue = massScaleCapped.dataSync()[0]
+        this.logger.debug('Mass scale', { massScale: massValue })
+      })
       newMass.dispose()
       newEnergy.dispose()
       energy.dispose()
-      energyScale.dispose()
 
       // Regression monitoring (dev only)
       if (IS_DEV) {
         const inferenceTime = performance.now() - startTime
 
-        // Extract density and velocity as Float32Array
-        const densityData = this.density.dataSync() as Float32Array
-        const velocityData = this.velocity.dataSync() as Float32Array
-
-        // Velocity is stored as [vx, vy] interleaved, need to separate
-        const n = densityData.length / 2 // velocity has 2 channels per cell
-        const velocityX = new Float32Array(n)
-        const velocityY = new Float32Array(n)
-
-        for (let i = 0; i < n; i++) {
-          velocityX[i] = velocityData[i * 2]
-          velocityY[i] = velocityData[i * 2 + 1]
-        }
-
-        // Use only first n/2 density values to match velocity size
-        const density = densityData.slice(0, n)
-
         this.frameNumber++
-        this.monitor.monitorFrame(
-          density,
-          velocityX,
-          velocityY,
-          inferenceTime,
-          this.logger,
-        )
+        if (this.frameNumber % this.monitorSampleInterval === 0) {
+          // Extract density and velocity as Float32Array
+          const densityData = this.density.dataSync() as Float32Array
+          const velocityData = this.velocity.dataSync() as Float32Array
+
+          // Velocity is stored as [vx, vy] interleaved, need to separate
+          const n = velocityData.length / 2
+          if (this.monitorBuffers == null || this.monitorBuffers.density.length !== n) {
+            this.monitorBuffers = {
+              density: new Float32Array(n),
+              velocityX: new Float32Array(n),
+              velocityY: new Float32Array(n),
+            }
+          }
+          const { density, velocityX, velocityY } = this.monitorBuffers
+          const densityCount = Math.min(densityData.length, n)
+          density.set(densityData.subarray(0, densityCount))
+          if (densityCount < n) {
+            density.fill(0, densityCount)
+          }
+          for (let i = 0; i < n; i++) {
+            velocityX[i] = velocityData[i * 2]
+            velocityY[i] = velocityData[i * 2 + 1]
+          }
+
+          this.monitor.monitorFrame(
+            density,
+            velocityX,
+            velocityY,
+            inferenceTime,
+            this.logger,
+          )
+        }
       }
 
       this.outputCallback(output?.dataSync() as Float32Array)
       output.dispose()
-      // set timeout to 0 to allow other tasks to run, like pause and apply force
+      const elapsedMs = performance.now() - startTime
+      const minIntervalMs = 1000 / this.fpsLimit
+      const delayMs = Math.max(0, minIntervalMs - elapsedMs)
       setTimeout(() => {
-        this.curFrameCountbyLastSecond += 1
-        this.logger.debug('Frame count', {
-          count: this.curFrameCountbyLastSecond,
-        })
         this.iterate()
-      }, 0)
+      }, delayMs)
     })
   }
 

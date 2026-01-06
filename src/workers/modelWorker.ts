@@ -218,8 +218,12 @@ function bindCallback(
   modelService: ModelService,
 ): void {
   const cache: Float32Array[] = []
+  const outputStride = 2
+  let outputIndex = 0
   const outputCallback = (output: Float32Array): void => {
     logger.debug('Output callback received', { size: output.length })
+    outputIndex++
+    if (outputIndex % outputStride !== 0) return
     const density = new Float32Array(output.length / 3)
     for (let i = 0; i < density.length; i++) {
       density[i] = output[i * 3]
@@ -229,7 +233,8 @@ function bindCallback(
   setInterval(() => {
     logger.debug('Cache state', { cachedFrames: cache.length })
     if (cache.length > 0) {
-      event.postMessage({ type: 'output', density: cache })
+      const transfer = cache.map(frame => frame.buffer)
+      event.postMessage({ type: 'output', density: cache }, transfer)
       cache.splice(0, cache.length)
     }
   }, 1000)

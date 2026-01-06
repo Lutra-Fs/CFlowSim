@@ -10,12 +10,21 @@ const IS_DEV: boolean = __DEV__
 
 const logger = createLogger('ONNXService')
 
+const EPS = 1e-6
+const MAX_DENSITY_SCALE = 10
+
 export default class ONNXService implements ModelService {
   private logger = logger
   private monitor = IS_DEV
     ? new RegressionMonitor()
     : (null as unknown as RegressionMonitor)
   private frameNumber = 0
+  private monitorSampleInterval = 5
+  private monitorBuffers: {
+    density: Float32Array
+    velocityX: Float32Array
+    velocityY: Float32Array
+  } | null = null
   session: ort.InferenceSession | null
   gridSize: [number, number]
   batchSize: number
@@ -34,7 +43,6 @@ export default class ONNXService implements ModelService {
   // 3, 4: Force (currently not used)
 
   private isPaused: boolean
-  private curFrameCountbyLastSecond: number
   // hold constructor private to prevent direct instantiation
   // ort.InferenceSession.create() is async,
   // so we need to use a static async method to create an instance
@@ -52,7 +60,6 @@ export default class ONNXService implements ModelService {
     this.outputChannelSize = 0
     this.mass = 0
     this.fpsLimit = 30
-    this.curFrameCountbyLastSecond = 0
   }
 
   // static async method to create an instance
@@ -86,20 +93,7 @@ export default class ONNXService implements ModelService {
 
   startSimulation(): void {
     this.isPaused = false
-    this.curFrameCountbyLastSecond = 0
-    this.fpsHeartbeat()
     this.iterate()
-  }
-
-  private fpsHeartbeat(): void {
-    setTimeout(() => {
-      this.curFrameCountbyLastSecond = 0
-      if (this.curFrameCountbyLastSecond >= this.fpsLimit) {
-        this.startSimulation()
-      } else {
-        this.fpsHeartbeat()
-      }
-    }, 1000)
   }
 
   pauseSimulation(): void {
@@ -199,44 +193,44 @@ export default class ONNXService implements ModelService {
         if (IS_DEV) {
           const inferenceTime = performance.now() - startTime
 
-          // Extract density and velocity from output (format: [d0, vx0, vy0, d1, vx1, vy1, ...])
-          const n = outputData.length / 3
-          const density = new Float32Array(n)
-          const velocityX = new Float32Array(n)
-          const velocityY = new Float32Array(n)
-
-          for (let i = 0; i < n; i++) {
-            density[i] = outputData[i * 3]
-            velocityX[i] = outputData[i * 3 + 1]
-            velocityY[i] = outputData[i * 3 + 2]
-          }
-
           this.frameNumber++
-          this.monitor.monitorFrame(
-            density,
-            velocityX,
-            velocityY,
-            inferenceTime,
-            this.logger,
-          )
+          if (this.frameNumber % this.monitorSampleInterval === 0) {
+            // Extract density and velocity from output (format: [d0, vx0, vy0, d1, vx1, vy1, ...])
+            const n = outputData.length / 3
+            if (this.monitorBuffers == null || this.monitorBuffers.density.length !== n) {
+              this.monitorBuffers = {
+                density: new Float32Array(n),
+                velocityX: new Float32Array(n),
+                velocityY: new Float32Array(n),
+              }
+            }
+            const { density, velocityX, velocityY } = this.monitorBuffers
+            for (let i = 0; i < n; i++) {
+              density[i] = outputData[i * 3]
+              velocityX[i] = outputData[i * 3 + 1]
+              velocityY[i] = outputData[i * 3 + 2]
+            }
+
+            this.monitor.monitorFrame(
+              density,
+              velocityX,
+              velocityY,
+              inferenceTime,
+              this.logger,
+            )
+          }
         }
 
         this.outputCallback(outputData)
-        this.curFrameCountbyLastSecond++
         this.copyOutputToMatrix(outputData)
+        const elapsedMs = performance.now() - startTime
+        const minIntervalMs = 1000 / this.fpsLimit
+        const delayMs = Math.max(0, minIntervalMs - elapsedMs)
         setTimeout(() => {
           if (!this.isPaused) {
-            if (this.curFrameCountbyLastSecond > this.fpsLimit) {
-              this.isPaused = true
-              this.logger.debug('FPS limit reached', {
-                fpsLimit: this.fpsLimit,
-                frameCount: this.curFrameCountbyLastSecond,
-              })
-            } else {
-              this.iterate()
-            }
+            this.iterate()
           }
-        })
+        }, delayMs)
       })
       .catch(e => {
         this.logger.error('Inference failed', {
@@ -274,10 +268,11 @@ export default class ONNXService implements ModelService {
       4,
     )
     this.logger.debug('Normalized channel', { channel, mean, std })
+    const safeStd = std === 0 ? 1 : std
     return this.matrixMap(
       matrix,
       [channel, channel + 1],
-      value => (value - mean) / std,
+      value => (value - mean) / safeStd,
     )
   }
 
@@ -294,7 +289,13 @@ export default class ONNXService implements ModelService {
   private constrainDensity(data: Float32Array): Float32Array {
     data = this.matrixMap(data, [0, 1], value => Math.max(value, 0), true)
     const sum = this.matrixSum(data, [0, 1], value => value, true)
-    const scale = this.mass / sum
+    if (!Number.isFinite(sum) || sum <= EPS) {
+      this.logger.warn('Density sum too small, skip scaling', { sum })
+      return data
+    }
+    let scale = this.mass / sum
+    if (!Number.isFinite(scale) || scale <= 0) return data
+    scale = Math.min(scale, MAX_DENSITY_SCALE)
     this.logger.debug('Scaling density', {
       currentMass: sum,
       targetMass: this.mass,
@@ -308,6 +309,14 @@ export default class ONNXService implements ModelService {
     inputEnergy: number,
   ): Float32Array {
     const curEnergy = this.matrixSum(data, [1, 3], value => value ** 2, true)
+    if (
+      !Number.isFinite(inputEnergy) ||
+      inputEnergy <= EPS ||
+      !Number.isFinite(curEnergy) ||
+      curEnergy <= EPS
+    ) {
+      return data
+    }
     const scale = this.roundFloat(Math.sqrt(inputEnergy / curEnergy), 4)
     this.logger.debug('Scaling velocity', {
       currentEnergy: curEnergy,
