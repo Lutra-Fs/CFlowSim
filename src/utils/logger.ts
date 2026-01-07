@@ -41,4 +41,4 @@ class Logger {
 }
 
 export const createLogger = (context: string) => new Logger(context)
-export { LogLevel }
+export { LogLevel, Logger }

@@ -1,7 +1,6 @@
 // Statistical collector for physical properties from simulation state
 
-// Logger interface for regression monitoring
-type Logger = Pick<Console, 'error' | 'warn' | 'log' | 'info'>
+import type { Logger } from '@/utils/logger'
 
 // Use a const that gets replaced by Vite at build time
 declare const __DEV__: boolean

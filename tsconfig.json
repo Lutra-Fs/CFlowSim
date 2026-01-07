@@ -21,9 +21,9 @@
       "@/*": ["./src/*"]
     },
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "types": ["vite/client"]
   },
-  "include": ["src", "tests"],
-  "exclude": ["src/workers/**/*"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src", "tests", "vite.config.ts"],
+  "exclude": ["src/workers"]
 }

@@ -89,8 +89,8 @@ export default function ParametersBar(props: {
               </CardHeader>
               <CardContent className="pt-3">
                 <ToggleGroup
-                  type="single"
-                  value={controlDifficulty}
+                  multiple={false}
+                  value={[controlDifficulty]}
                   onValueChange={value => {
                     if (!value || value.length === 0) return
                     // @base-ui/react returns an array, get the first (and only) value
@@ -150,8 +150,8 @@ export default function ParametersBar(props: {
                 <div className="space-y-2">
                   <ParameterLabel title="Rendering mode" />
                   <ToggleGroup
-                    type="single"
-                    value={props.params.renderHeightMap ? 'height' : 'flat'}
+                    multiple={false}
+                    value={[props.params.renderHeightMap ? 'height' : 'flat']}
                     onValueChange={value => {
                       if (!value || value.length === 0) return
                       // @base-ui/react returns an array, get the first (and only) value
@@ -188,8 +188,8 @@ export default function ParametersBar(props: {
                 <div className="space-y-2">
                   <ParameterLabel title="Renderer Mode" />
                   <ToggleGroup
-                    type="single"
-                    value={props.params.rendererBackend}
+                    multiple={false}
+                    value={[props.params.rendererBackend]}
                     onValueChange={value => {
                       if (!value || value.length === 0) return
                       // @base-ui/react returns an array, get the first (and only) value
@@ -225,10 +225,10 @@ export default function ParametersBar(props: {
                     <div className="space-y-2">
                       <ParameterLabel title="Current Control" />
                       <ToggleGroup
-                        type="single"
-                        value={
+                        multiple={false}
+                        value={[
                           props.params.isCameraControlMode ? 'camera' : 'force'
-                        }
+                        ]}
                         onValueChange={value => {
                           if (!value || value.length === 0) return
                           // @base-ui/react returns an array, get the first (and only) value

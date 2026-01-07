@@ -5,8 +5,6 @@ import {
   copyFileSync,
   mkdirSync,
   existsSync,
-  readFileSync,
-  writeFileSync,
 } from 'fs'
 import { resolve } from 'path'
 import type { Plugin } from 'vite'
