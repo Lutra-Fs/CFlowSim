@@ -11,7 +11,7 @@ import {
   uniform,
   vec3,
 } from 'three/tsl'
-import { RunnerFunc, type UpdateForceArgs } from '../workers/modelWorkerMessage'
+import type { ModelWorkerClient } from '../workers/workerClient'
 import {
   createDensityTexture,
   updateDensityTexture,
@@ -28,10 +28,8 @@ interface DiffusionPlaneProps {
     renderHeightMap: boolean
     isCameraControlMode: boolean
   }
-  /** Array of output subscribers */
-  outputSubs: Array<(density: Float32Array[]) => void>
-  /** Web Worker for model computation */
-  worker: Worker | null
+  /** Worker client for model computation */
+  workerClient: ModelWorkerClient | null
   /** Whether interaction is disabled */
   disableInteraction: boolean
   /** Whether rendering is active */
@@ -56,8 +54,7 @@ type FramePacket = {
  * ```tsx
  * <DiffusionPlane
  *   params={simulationParams}
- *   worker={worker}
- *   outputSubs={outputSubs}
+ *   workerClient={workerClient}
  *   disableInteraction={false}
  * />
  * ```
@@ -164,6 +161,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
 
   // Subscribe to density updates from worker
   useEffect(() => {
+    if (!props.workerClient) return
     let isUnmounted = false
 
     const outputSub = (data: Float32Array[]) => {
@@ -240,7 +238,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     }
 
     // Subscribe to worker output
-    props.outputSubs.push(outputSub)
+    const unsubscribe = props.workerClient.onOutput(outputSub)
 
     // Cleanup function: clear intervals and unsubscribe
     return () => {
@@ -250,12 +248,9 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
       }
       playbackTimerRef.current = null
       frameQueueRef.current = []
-      const idx = props.outputSubs.indexOf(outputSub)
-      if (idx > -1) {
-        props.outputSubs.splice(idx, 1)
-      }
+      unsubscribe()
     }
-  }, [densityTexture, props.isActive, props.outputSubs])
+  }, [densityTexture, props.isActive, props.workerClient])
 
   useEffect(() => {
     if (props.isActive) return
@@ -325,19 +320,15 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
       prevPointPos.current.set(pointPos.current.x, pointPos.current.y)
       pointMoved.current = false
 
-      if (!props.worker) return
-      // Send force update to worker
-      props.worker.postMessage({
-        func: RunnerFunc.UPDATE_FORCE,
-        args: {
-          forceDelta,
-          loc,
-        } satisfies UpdateForceArgs,
+      if (!props.workerClient) return
+      props.workerClient.updateForce({
+        forceDelta: { x: forceDelta.x, y: forceDelta.y },
+        loc: { x: loc.x, y: loc.y },
       })
     }, forceInterval)
 
     return () => clearInterval(interval)
-  }, [props.disableInteraction, props.isActive, props.worker])
+  }, [props.disableInteraction, props.isActive, props.workerClient])
 
   // Geometry based on render mode
   const segments = props.params.renderHeightMap ? 31 : 1

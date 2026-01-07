@@ -1,16 +1,12 @@
-import { type JSX, useCallback, useEffect } from 'react'
+import { type JSX, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import type { ModelSave } from '../services/model/modelService'
-import {
-  type IncomingMessage,
-  RunnerFunc,
-} from '../workers/modelWorkerMessage.ts'
+import type { ModelWorkerClient } from '../workers/workerClient'
 
 interface ControlBarProps {
-  modelSaveSubs: Array<(save: ModelSave) => void>
-  worker: Worker | null
+  workerClient: ModelWorkerClient | null
   setRestorePopupVisible: React.Dispatch<React.SetStateAction<boolean>>
   showPerfOverlay: boolean
   setShowPerfOverlay: React.Dispatch<React.SetStateAction<boolean>>
@@ -18,13 +14,12 @@ interface ControlBarProps {
 
 export default function ControlBar(props: ControlBarProps): JSX.Element {
   const {
-    modelSaveSubs,
-    worker,
+    workerClient,
     setRestorePopupVisible,
     showPerfOverlay,
     setShowPerfOverlay,
   } = props
-  const hasWorker = worker !== null
+  const hasWorker = workerClient !== null
 
   // take the json and have the user download it
   const save = useCallback((sav: ModelSave): void => {
@@ -44,17 +39,15 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
     document.body.removeChild(link)
   }, [])
 
-  useEffect(() => {
-    if (!modelSaveSubs.includes(save)) {
-      modelSaveSubs.push(save)
-    }
-    return () => {
-      const index = modelSaveSubs.indexOf(save)
-      if (index !== -1) {
-        modelSaveSubs.splice(index, 1)
-      }
-    }
-  }, [modelSaveSubs, save])
+  const handleSave = useCallback((): void => {
+    if (!workerClient) return
+    workerClient
+      .serialize()
+      .then(save)
+      .catch(error => {
+        console.error('Worker serialize failed', error)
+      })
+  }, [save, workerClient])
 
   return (
     <Card
@@ -65,10 +58,10 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
       <div className="flex items-center gap-1">
           <Button
             onClick={() => {
-              if (!worker) return
-              worker.postMessage({
-                func: RunnerFunc.START,
-              } satisfies IncomingMessage)
+              if (!workerClient) return
+              workerClient.start().catch(error => {
+                console.error('Worker start failed', error)
+              })
             }}
             size="sm"
             className="bg-[#00a9ce] hover:bg-[#0097b8] text-white shadow-lg shadow-cyan-900/20 px-5 rounded-xl font-medium tracking-wide transition-all hover:scale-105 active:scale-95"
@@ -78,10 +71,8 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
           </Button>
           <Button
             onClick={() => {
-              if (!worker) return
-              worker.postMessage({
-                func: RunnerFunc.PAUSE,
-              } satisfies IncomingMessage)
+              if (!workerClient) return
+              workerClient.pause()
             }}
             size="sm"
             variant="ghost"
@@ -103,8 +94,8 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
           </Button>
           <Button
             onClick={() => {
-              if (!worker) return
-              worker.terminate()
+              if (!workerClient) return
+              workerClient.terminate()
             }}
             size="sm"
             variant="ghost"
@@ -121,10 +112,7 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
         <div className="flex items-center gap-1">
           <Button
             onClick={() => {
-              if (!worker) return
-              worker.postMessage({
-                func: RunnerFunc.SERIALIZE,
-              } satisfies IncomingMessage)
+              handleSave()
             }}
             size="sm"
             variant="ghost"
@@ -147,7 +135,7 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
           ) : null}
           <Button
             onClick={() => {
-              if (!worker) return
+              if (!workerClient) return
               setRestorePopupVisible(true)
             }}
             size="sm"

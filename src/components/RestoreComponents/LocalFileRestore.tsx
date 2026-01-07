@@ -1,13 +1,9 @@
 import { Upload } from 'lucide-react'
 import { type JSX, useCallback, useState } from 'react'
-import {
-  type IncomingMessage,
-  RunnerFunc,
-} from '../../workers/modelWorkerMessage'
 import type { RestoreProps } from './RestoreProps'
 
 export default function LocalFileRestore(props: RestoreProps): JSX.Element {
-  const { worker } = props
+  const { workerClient } = props
   const [isDragging, setIsDragging] = useState(false)
 
   const handleFile = useCallback(
@@ -18,16 +14,16 @@ export default function LocalFileRestore(props: RestoreProps): JSX.Element {
         console.log(e.target?.result)
         const result = e.target?.result
         if (typeof result === 'string') {
-          const msg: IncomingMessage = {
-            func: RunnerFunc.DESERIALIZE,
-            args: { savedState: result },
-          }
-          worker.postMessage(msg)
+          workerClient
+            .deserialize({ savedState: result })
+            .catch(error => {
+              console.error('Worker deserialize failed', error)
+            })
         }
       }
       reader.readAsText(file)
     },
-    [worker],
+    [workerClient],
   )
 
   const handleDrop = useCallback(

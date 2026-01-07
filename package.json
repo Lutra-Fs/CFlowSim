@@ -18,7 +18,7 @@
     "preview": "vite preview",
     "preview:prod": "vite preview --mode production",
     "preview:standalone": "vite preview --mode standalone",
-    "test": "jest"
+    "test": "jest --config jest.config.cjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",

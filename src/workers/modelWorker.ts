@@ -1,28 +1,55 @@
-// a worker that can control the modelService via messages
-
 import Ajv, { type JSONSchemaType } from 'ajv'
 import AutoSaveService from '../services/autoSave/autoSaveService'
 import {
   createModelService,
+  modelSerialize,
   type ModelSave,
   type ModelService,
-  modelSerialize,
 } from '../services/model/modelService'
 import { createLogger } from '../utils/logger'
+import type { Vector2 } from 'three'
 import {
-  type DeserializeArgs,
-  type IncomingMessage,
-  type InitArgs,
-  RunnerFunc,
-  type UpdateForceArgs,
+  type DeserializePayload,
+  type InitPayload,
+  type UpdateForcePayload,
+  type WorkerCommand,
+  type WorkerEnvelope,
+  isWorkerCommand,
 } from './modelWorkerMessage'
 
 const logger = createLogger('modelWorker')
 
-let modelService: ModelService | null = null
-let autoSaveService: AutoSaveService | null = null
-let modelUrl: string = ''
-let isRunning = false
+export interface AutoSaveController {
+  startAutoSave: () => void
+  pauseAutoSave: () => void
+}
+
+export interface WorkerLogger {
+  debug: (message: string, meta?: Record<string, unknown>) => void
+  error: (message: string, meta?: Record<string, unknown>) => void
+}
+
+export interface ModelWorkerDeps {
+  createModelService: (
+    modelPath: string,
+    gridSize?: [number, number],
+    batchSize?: number,
+  ) => Promise<ModelService>
+  createAutoSaveService: (
+    getModelSerialized: () => ModelSave,
+  ) => AutoSaveController
+  fetchJson: (path: string) => Promise<number[][][][]>
+  emit: (message: WorkerEnvelope, transfer?: Transferable[]) => void
+  logger: WorkerLogger
+  scheduleInterval: (fn: () => void, ms: number) => ReturnType<typeof setInterval>
+  clearInterval: (id: ReturnType<typeof setInterval>) => void
+  scheduleTimeout: (fn: () => void, ms: number) => ReturnType<typeof setTimeout>
+}
+
+export interface ModelWorkerRuntime {
+  handleCommand: (command: WorkerCommand) => Promise<void>
+  dispose: () => void
+}
 
 const modelSaveSchema: JSONSchemaType<ModelSave> = {
   type: 'object',
@@ -52,202 +79,326 @@ const modelSaveSchema: JSONSchemaType<ModelSave> = {
 const ajv = new Ajv()
 const modelSaveSchemaValidator = ajv.compile(modelSaveSchema)
 
-export function onmessage(
-  this: DedicatedWorkerGlobalScope,
-  event: MessageEvent,
-): void {
-  const data = event.data as IncomingMessage
-  if (data == null) {
-    throw new Error('data is null')
+export function createModelWorkerRuntime(
+  deps: ModelWorkerDeps,
+): ModelWorkerRuntime {
+  let modelService: ModelService | null = null
+  let autoSaveService: AutoSaveController | null = null
+  let modelUrl = ''
+  let isRunning = false
+  let outputIntervalId: ReturnType<typeof setInterval> | null = null
+  let outputCache: Float32Array[] = []
+  let outputIndex = 0
+
+  const emitResponseOk = (
+    name: 'init' | 'serialize' | 'deserialize',
+    id: string,
+    payload?: { save: ModelSave },
+  ): void => {
+    deps.emit({
+      kind: 'response',
+      id,
+      name,
+      ok: true,
+      payload,
+    })
   }
-  logger.debug('Worker received message', { func: data.func })
-  switch (data.func) {
-    case RunnerFunc.INIT:
-      if (modelService == null) {
-        const { modelPath, initConditionPath } = data.args as InitArgs
-        modelUrl = modelPath
-        getServiceFromInitCond(this, initConditionPath, modelPath)
-          .then(service => {
-            modelService = service
-            autoSaveService = new AutoSaveService(() => {
-              return modelSerialize(modelPath, modelService)
-            })
-            this.postMessage({ type: 'init', success: true })
+
+  const emitResponseError = (
+    name: 'init' | 'serialize' | 'deserialize',
+    id: string,
+    message: string,
+  ): void => {
+    deps.emit({
+      kind: 'response',
+      id,
+      name,
+      ok: false,
+      error: { message },
+    })
+  }
+
+  const serializeCurrent = (): ModelSave => {
+    if (modelService == null)
+      throw new Error('modelService is null, cannot serialize')
+    const save = modelSerialize(modelUrl, modelService)
+    if (save == null)
+      throw new Error('modelSerialize returned null result')
+    return save
+  }
+
+  const bindOutput = (service: ModelService): void => {
+    const outputStride = 2
+    outputCache = []
+    outputIndex = 0
+    if (outputIntervalId != null) {
+      deps.clearInterval(outputIntervalId)
+      outputIntervalId = null
+    }
+
+    const outputCallback = (output: Float32Array): void => {
+      if (!isRunning) return
+      outputIndex++
+      if (outputIndex % outputStride !== 0) return
+      const density = new Float32Array(output.length / 3)
+      for (let i = 0; i < density.length; i++) {
+        density[i] = output[i * 3]
+      }
+      outputCache.push(density)
+    }
+
+    outputIntervalId = deps.scheduleInterval(() => {
+      if (!isRunning) return
+      if (outputCache.length === 0) return
+      const frames = outputCache.splice(0, outputCache.length)
+      const transfer = frames.map(frame => frame.buffer)
+      deps.emit(
+        {
+          kind: 'event',
+          name: 'output',
+          payload: { density: frames },
+        },
+        transfer,
+      )
+    }, 1000)
+
+    service.bindOutput(outputCallback)
+  }
+
+  const getServiceFromSave = async (save: ModelSave): Promise<ModelService> => {
+    deps.logger.debug('Restoring model service from save')
+    const service = await deps.createModelService(save.modelUrl, [64, 64], 1)
+    modelUrl = save.modelUrl
+    bindOutput(service)
+    service.loadDataArray(save.inputTensor)
+    service.setMass(save.mass)
+    return service
+  }
+
+  const getServiceFromInitCond = async (
+    initConditionPath: string,
+    modelPath: string,
+  ): Promise<ModelService> => {
+    const service = await deps.createModelService(modelPath, [64, 64], 1)
+    bindOutput(service)
+    if (
+      !initConditionPath.startsWith('/initData/') ||
+      !initConditionPath.endsWith('.json')
+    ) {
+      throw new Error(`invalid data path ${initConditionPath}`)
+    }
+    const data = await deps.fetchJson(initConditionPath)
+    service.loadDataArray(data as number[][][][])
+    return service
+  }
+
+  const handleInit = async (
+    id: string,
+    payload?: InitPayload,
+  ): Promise<void> => {
+    if (modelService != null) {
+      emitResponseError('init', id, 'modelService already initialized')
+      return
+    }
+    if (!payload) {
+      emitResponseError('init', id, 'init payload missing')
+      return
+    }
+    try {
+      modelUrl = payload.modelPath
+      const service = await getServiceFromInitCond(
+        payload.initConditionPath,
+        payload.modelPath,
+      )
+      modelService = service
+      autoSaveService = deps.createAutoSaveService(serializeCurrent)
+      emitResponseOk('init', id)
+    } catch (error) {
+      deps.logger.error('Service initialization failed', {
+        error: error instanceof Error ? error.message : String(error),
+      })
+      emitResponseError(
+        'init',
+        id,
+        error instanceof Error ? error.message : String(error),
+      )
+    }
+  }
+
+  const handleStart = (): void => {
+    if (modelService == null) {
+      deps.logger.debug('start ignored, modelService is null')
+      return
+    }
+    if (isRunning) return
+    isRunning = true
+    modelService.startSimulation()
+    if (autoSaveService != null) {
+      try {
+        autoSaveService.startAutoSave()
+      } catch (error) {
+        const err = error as Error
+        if (err.message === 'IndexedDB not ready') {
+          deps.scheduleTimeout(() => {
+            autoSaveService?.startAutoSave()
+          }, 500)
+        } else {
+          deps.logger.error('autoSave start failed', {
+            error: err.message,
           })
-          .catch(e => {
-            logger.error('Service initialization failed', {
-              error: e instanceof Error ? e.message : String(e),
-            })
-          })
-      }
-      break
-    case RunnerFunc.START:
-      if (modelService == null) {
-        throw new Error('modelService is null')
-      }
-      if (isRunning) {
-        break
-      }
-      isRunning = true
-      modelService.startSimulation()
-      if (autoSaveService != null) {
-        try {
-          autoSaveService.startAutoSave()
-        } catch (e) {
-          // if error is not ready, retry in 1 second
-          const error = e as Error
-          if (error.message === 'IndexedDB not ready') {
-            setTimeout(() => {
-              autoSaveService?.startAutoSave()
-            }, 500)
-          } else {
-            throw e
-          }
         }
       }
-      break
-    case RunnerFunc.PAUSE:
-      if (modelService == null) {
-        throw new Error('modelService is null')
-      }
-      if (!isRunning) {
-        break
-      }
-      isRunning = false
-      modelService.pauseSimulation()
-      if (autoSaveService != null) {
-        autoSaveService.pauseAutoSave()
-      }
-      break
-    case RunnerFunc.UPDATE_FORCE:
-      updateForce(data.args as UpdateForceArgs)
-      break
-    case RunnerFunc.SERIALIZE:
-      this.postMessage({
-        type: 'modelSave',
-        save: workerSerialize(),
-      })
-      break
-    case RunnerFunc.DESERIALIZE: {
-      // if (modelService == null) throw new Error('modelService is null');
-      // modelService.pauseSimulation();
-      const { savedState } = data.args as DeserializeArgs
+    }
+  }
+
+  const handlePause = (): void => {
+    if (modelService == null) return
+    if (!isRunning) return
+    isRunning = false
+    modelService.pauseSimulation()
+    if (autoSaveService != null) {
+      autoSaveService.pauseAutoSave()
+    }
+  }
+
+  const handleUpdateForce = (payload?: UpdateForcePayload): void => {
+    if (modelService == null) return
+    if (!payload) {
+      deps.logger.error('update_force payload missing')
+      return
+    }
+    modelService.updateForce(
+      payload.loc as unknown as Vector2,
+      payload.forceDelta as unknown as Vector2,
+    )
+  }
+
+  const handleSerialize = (id: string): void => {
+    if (modelService == null) {
+      emitResponseError('serialize', id, 'modelService is null')
+      return
+    }
+    try {
+      const save = serializeCurrent()
+      emitResponseOk('serialize', id, { save })
+    } catch (error) {
+      emitResponseError(
+        'serialize',
+        id,
+        error instanceof Error ? error.message : String(error),
+      )
+    }
+  }
+
+  const handleDeserialize = async (
+    id: string,
+    payload?: DeserializePayload,
+  ): Promise<void> => {
+    if (!payload) {
+      emitResponseError('deserialize', id, 'deserialize payload missing')
+      return
+    }
+    try {
+      const { savedState } = payload
       let possibleSave: ModelSave
       if (typeof savedState === 'string') {
-        possibleSave = JSON.parse(savedState)
+        possibleSave = JSON.parse(savedState) as ModelSave
         if (!modelSaveSchemaValidator(possibleSave)) {
-          throw new Error('invalid modelSave')
+          emitResponseError('deserialize', id, 'invalid modelSave')
+          return
         }
       } else {
         possibleSave = savedState
       }
-      getServiceFromSave(this, possibleSave)
-        .then(ms => {
-          modelService = ms
-          logger.debug('Model service restored successfully')
-          this.postMessage({ type: 'deserialize', success: true })
-        })
-        .catch(e => {
-          throw new Error(`something went wrong with deserialisation ${e}`)
-        })
-      break
+      const service = await getServiceFromSave(possibleSave)
+      modelService = service
+      emitResponseOk('deserialize', id)
+    } catch (error) {
+      emitResponseError(
+        'deserialize',
+        id,
+        error instanceof Error ? error.message : String(error),
+      )
     }
   }
-}
 
-function updateForce(args: UpdateForceArgs): void {
-  if (modelService == null) {
-    throw new Error('modelService is null')
-  }
-  modelService.updateForce(args.loc, args.forceDelta)
-}
-
-self.onmessage = onmessage
-
-// serialise the current model service
-export function workerSerialize(): ModelSave {
-  // return a modelsave with the current model
-  if (modelService == null)
-    throw new Error('modelService is null, cannot serialise')
-  const save = modelSerialize(modelUrl, modelService)
-  if (save == null)
-    throw new Error('something went wrong during model serialisation')
-  return save
-}
-
-// create a model service and restore
-// all of its state from a ModelSave
-async function getServiceFromSave(
-  event: DedicatedWorkerGlobalScope,
-  save: ModelSave,
-): Promise<ModelService> {
-  logger.debug('Restoring model service from save')
-  const modelService = await createModelService(save.modelUrl, [64, 64], 1)
-  modelUrl = save.modelUrl
-  bindCallback(event, modelService)
-  // restore previous state
-  modelService.loadDataArray(save.inputTensor)
-  modelService.setMass(save.mass)
-  return modelService
-}
-
-// create a new model service and load the data array
-// from a file containing initial conditions
-async function getServiceFromInitCond(
-  event: DedicatedWorkerGlobalScope,
-  dataPath: string,
-  modelPath: string,
-): Promise<ModelService> {
-  const modelService = await createModelService(modelPath, [64, 64], 1)
-  bindCallback(event, modelService)
-  // fetch the data
-  // check the content type
-  // dataPath should be start with /initData/ and end with .json
-  if (!dataPath.startsWith('/initData/') || !dataPath.endsWith('.json')) {
-    throw new Error(`invalid data path ${dataPath}`)
-  }
-
-  const response = await fetch(dataPath)
-  if (!response.ok) {
-    throw new Error(`failed to fetch data from ${dataPath}`)
-  }
-  const contentType = response.headers.get('content-type')
-  if (contentType != null && !contentType.startsWith('application/json')) {
-    throw new Error(`invalid content type ${contentType}`)
-  }
-  const data = await response.json()
-  // assert that data is formatted correctly
-  modelService.loadDataArray(data as number[][][][])
-  return modelService
-}
-
-// bind this worker's output callback to a service
-function bindCallback(
-  event: DedicatedWorkerGlobalScope,
-  modelService: ModelService,
-): void {
-  const cache: Float32Array[] = []
-  const outputStride = 2
-  let outputIndex = 0
-  const outputCallback = (output: Float32Array): void => {
-    if (!isRunning) return
-    logger.debug('Output callback received', { size: output.length })
-    outputIndex++
-    if (outputIndex % outputStride !== 0) return
-    const density = new Float32Array(output.length / 3)
-    for (let i = 0; i < density.length; i++) {
-      density[i] = output[i * 3]
+  const handleCommand = async (command: WorkerCommand): Promise<void> => {
+    deps.logger.debug('Worker received command', {
+      name: command.name,
+    })
+    switch (command.name) {
+      case 'init':
+        await handleInit(command.id, command.payload as InitPayload)
+        return
+      case 'start':
+        handleStart()
+        return
+      case 'pause':
+        handlePause()
+        return
+      case 'update_force':
+        handleUpdateForce(command.payload as UpdateForcePayload)
+        return
+      case 'serialize':
+        handleSerialize(command.id)
+        return
+      case 'deserialize':
+        await handleDeserialize(command.id, command.payload as DeserializePayload)
+        return
     }
-    cache.push(density)
   }
-  setInterval(() => {
-    if (!isRunning) return
-    logger.debug('Cache state', { cachedFrames: cache.length })
-    if (cache.length > 0) {
-      const transfer = cache.map(frame => frame.buffer)
-      event.postMessage({ type: 'output', density: cache }, transfer)
-      cache.splice(0, cache.length)
+
+  const dispose = (): void => {
+    if (outputIntervalId != null) {
+      deps.clearInterval(outputIntervalId)
+      outputIntervalId = null
     }
-  }, 1000)
-  modelService.bindOutput(outputCallback)
+    outputCache = []
+  }
+
+  return { handleCommand, dispose }
+}
+
+const workerRuntime =
+  typeof self === 'undefined'
+    ? null
+    : createModelWorkerRuntime({
+        createModelService,
+        createAutoSaveService: getModelSerialized =>
+          new AutoSaveService(getModelSerialized),
+        fetchJson: async (dataPath: string) => {
+          const response = await fetch(dataPath)
+          if (!response.ok) {
+            throw new Error(`failed to fetch data from ${dataPath}`)
+          }
+          const contentType = response.headers.get('content-type')
+          if (contentType != null && !contentType.startsWith('application/json')) {
+            throw new Error(`invalid content type ${contentType}`)
+          }
+          return (await response.json()) as number[][][][]
+        },
+        emit: (message, transfer) => {
+          if (transfer != null && transfer.length > 0) {
+            self.postMessage(message, transfer)
+            return
+          }
+          self.postMessage(message)
+        },
+        logger,
+        scheduleInterval: (fn, ms) => setInterval(fn, ms),
+        clearInterval: id => clearInterval(id),
+        scheduleTimeout: (fn, ms) => setTimeout(fn, ms),
+      })
+
+if (workerRuntime && typeof self !== 'undefined') {
+  self.onmessage = event => {
+    const data = event.data
+    if (!isWorkerCommand(data)) {
+      logger.error('Worker received invalid command', {
+        dataType: typeof data,
+      })
+      return
+    }
+    void workerRuntime.handleCommand(data)
+  }
 }

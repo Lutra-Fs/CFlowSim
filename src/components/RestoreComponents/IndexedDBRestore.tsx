@@ -2,15 +2,10 @@ import { openDB } from 'idb'
 import { type JSX, useEffect, useState } from 'react'
 import { Separator } from '@/components/ui/separator'
 import type { ModelSave } from '../../services/model/modelService'
-import {
-  type DeserializeArgs,
-  type IncomingMessage,
-  RunnerFunc,
-} from '../../workers/modelWorkerMessage'
 import type { RestoreProps } from './RestoreProps'
 
 export default function IndexedDBRestore(props: RestoreProps): JSX.Element {
-  const { worker } = props
+  const { workerClient } = props
   const [keys, setKeys] = useState<string[]>([])
 
   useEffect(() => {
@@ -41,13 +36,11 @@ export default function IndexedDBRestore(props: RestoreProps): JSX.Element {
       getRequest.onsuccess = event => {
         const value = (event.target as IDBRequest).result
         if (value !== undefined) {
-          const message: IncomingMessage = {
-            func: RunnerFunc.DESERIALIZE,
-            args: {
-              savedState: value as ModelSave,
-            } satisfies DeserializeArgs,
-          }
-          worker.postMessage(message)
+          workerClient
+            .deserialize({ savedState: value as ModelSave })
+            .catch(error => {
+              console.error('Worker deserialize failed', error)
+            })
         }
       }
     }

@@ -4,7 +4,6 @@ import {
   Suspense,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -20,12 +19,7 @@ import {
 } from '../components/PerfOverlay'
 import RestorePopup from '../components/RestoreComponents/RestorePopUp'
 import { SimulationParams } from '../components/SimulationParams'
-import type { ModelSave } from '../services/model/modelService'
-import {
-  type IncomingMessage,
-  type OutgoingMessage,
-  RunnerFunc,
-} from '../workers/modelWorkerMessage'
+import type { ModelWorkerClient } from '../workers/workerClient'
 
 // Debug logging for environment detection (can be removed after verification)
 console.log('[ENV] DEV:', import.meta.env.DEV, 'MODE:', import.meta.env.MODE)
@@ -42,12 +36,12 @@ declare module '@react-three/fiber' {
 }
 
 interface IndexProp {
-  worker: Worker | null
+  workerClient: ModelWorkerClient | null
   isActive: boolean
 }
 
 export default function Home(props: IndexProp): JSX.Element {
-  const { worker, isActive } = props
+  const { workerClient, isActive } = props
   const [simulationParams, setSimulationParams] = useState(
     () => new SimulationParams(),
   )
@@ -55,8 +49,6 @@ export default function Home(props: IndexProp): JSX.Element {
   const [showPerfOverlay, setShowPerfOverlay] = useState(false)
   const rendererBackend = simulationParams.rendererBackend
   const perfStatsRef = useRef<PerfStats | null>(null)
-  const workerReadyRef = useRef(false)
-  const isActiveRef = useRef(isActive)
   useEffect(() => {
     const confirmExit = (e: BeforeUnloadEvent): void => {
       console.log('beforeunload event triggered')
@@ -69,68 +61,14 @@ export default function Home(props: IndexProp): JSX.Element {
     }
   }, [])
 
-  // to distribute the worker messages across different components
-  // we utilise an observer pattern where components can subscribe
-  // their functions to different message types
-  const outputSubs: Array<(density: Float32Array[]) => void> = useMemo(
-    () => [],
-    [],
-  )
-
-  const modelSaveSubs: Array<(save: ModelSave) => void> = useMemo(() => [], [])
   const [restorePopupVisible, setRestorePopupVisible] = useState(false)
 
-  // distribute the worker callback
   useEffect(() => {
-    isActiveRef.current = isActive
-  }, [isActive])
-
-  useEffect(() => {
-    if (!worker) return
-    workerReadyRef.current = false
-    worker.onmessage = e => {
-      const data = e.data as OutgoingMessage
-
-      switch (data.type) {
-        case 'init':
-          console.log('worker initialised')
-          workerReadyRef.current = true
-          if (isActiveRef.current) {
-            worker.postMessage({
-              func: RunnerFunc.START,
-            } satisfies IncomingMessage)
-          }
-          break
-        case 'output':
-          for (const x of outputSubs)
-            if (data.density !== undefined) x(data.density)
-          break
-
-        case 'modelSave':
-          for (const x of modelSaveSubs) {
-            if (data === null)
-              throw new Error(
-                'error in calling worker.modelSave, data was null',
-              )
-            if (!data.save) {
-              throw new Error('data.save is undefined')
-            }
-            x(data.save)
-          }
-          break
-      }
-    }
-    worker.onerror = e => {
-      console.log(e)
-    }
-  }, [worker, outputSubs, modelSaveSubs])
-
-  useEffect(() => {
-    if (!worker || !workerReadyRef.current) return
-    worker.postMessage({
-      func: isActive ? RunnerFunc.START : RunnerFunc.PAUSE,
-    } satisfies IncomingMessage)
-  }, [isActive, worker])
+    if (!workerClient) return
+    workerClient.setActive(isActive).catch(error => {
+      console.error('Worker setActive failed', error)
+    })
+  }, [isActive, workerClient])
 
   const createRenderer = useCallback(
     async (
@@ -195,15 +133,14 @@ export default function Home(props: IndexProp): JSX.Element {
               isActive={isActive}
               disableInteraction={simulationParams.isCameraControlMode}
               params={simulationParams}
-              worker={worker}
-              outputSubs={outputSubs}
+              workerClient={workerClient}
             />
           </Suspense>
         </Canvas>
       </div>
-      {restorePopupVisible && worker ? (
+      {restorePopupVisible && workerClient ? (
         <RestorePopup
-          worker={worker}
+          workerClient={workerClient}
           setRestorePopupVisible={setRestorePopupVisible}
         />
       ) : null}
@@ -214,8 +151,7 @@ export default function Home(props: IndexProp): JSX.Element {
         />
       ) : null}
       <ControlBar
-        modelSaveSubs={modelSaveSubs}
-        worker={worker}
+        workerClient={workerClient}
         setRestorePopupVisible={setRestorePopupVisible}
         showPerfOverlay={showPerfOverlay}
         setShowPerfOverlay={setShowPerfOverlay}

@@ -6,18 +6,16 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { resolveAssetPath } from './utils/assetUrl'
 import Home from './pages'
 import AboutPage from './pages/about'
-import {
-  type IncomingMessage,
-  type InitArgs,
-  RunnerFunc,
-} from './workers/modelWorkerMessage'
+import { ModelWorkerClient } from './workers/workerClient'
 
 function AppContent(): JSX.Element {
   // save the current page in state
   // 0 = home(index,simulation) 1 = about
   const [page, setPage] = useState(0)
 
-  const [simWorker, setSimWorker] = useState<Worker | null>(null)
+  const [workerClient, setWorkerClient] = useState<ModelWorkerClient | null>(
+    null,
+  )
   useEffect(() => {
     const worker = new Worker(
       new URL('./workers/modelWorker', import.meta.url),
@@ -25,26 +23,19 @@ function AppContent(): JSX.Element {
         type: 'module',
       },
     )
-    setSimWorker(worker)
+    const client = new ModelWorkerClient(worker, {
+      modelPath: resolveAssetPath('/model/bno_small_001.onnx'),
+      initConditionPath: resolveAssetPath(
+        '/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_0.json',
+      ),
+    })
+    setWorkerClient(client)
 
     return () => {
+      client.dispose()
       worker.terminate()
     }
   }, [])
-
-  useEffect(() => {
-    const message: IncomingMessage = {
-      func: RunnerFunc.INIT,
-      args: {
-        modelPath: resolveAssetPath('/model/bno_small_001.onnx'),
-        initConditionPath: resolveAssetPath(
-          '/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_0.json',
-        ),
-      } satisfies InitArgs,
-    }
-    if (simWorker === null) return
-    simWorker.postMessage(message)
-  }, [simWorker])
 
   const { setThemeMode } = useTheme()
 
@@ -57,7 +48,10 @@ function AppContent(): JSX.Element {
         <div
           className={`absolute inset-0 ${isHomeActive ? '' : 'pointer-events-none opacity-0'}`}
         >
-          <Home worker={simWorker} isActive={isHomeActive} />
+          <Home
+            workerClient={workerClient}
+            isActive={isHomeActive}
+          />
         </div>
         {!isHomeActive ? (
           <div className="absolute inset-0">
