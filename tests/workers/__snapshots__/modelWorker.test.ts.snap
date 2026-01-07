@@ -1,0 +1,50 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`worker command flow snapshot 1`] = `
+[
+  {
+    "id": "req_init",
+    "kind": "response",
+    "name": "init",
+    "ok": true,
+  },
+  {
+    "frames": [
+      [
+        7,
+        10,
+      ],
+    ],
+    "kind": "event",
+    "name": "output",
+  },
+  {
+    "id": "req_serialize",
+    "kind": "response",
+    "name": "serialize",
+    "ok": true,
+    "save": {
+      "inputTensor": [
+        [
+          [
+            [
+              1,
+              2,
+            ],
+          ],
+        ],
+      ],
+      "mass": 3,
+      "modelType": "mock",
+      "modelUrl": "/model/test.onnx",
+      "time": "2024-01-01T00:00:01.000Z",
+    },
+  },
+  {
+    "id": "req_deserialize",
+    "kind": "response",
+    "name": "deserialize",
+    "ok": true,
+  },
+]
+`;

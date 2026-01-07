@@ -1,4 +1,4 @@
-import { expect, jest, test } from '@jest/globals'
+import { expect, vi, test } from 'vitest'
 import type { ModelSave, ModelService } from '../../src/services/model/modelService'
 import {
   createModelWorkerRuntime,
@@ -22,8 +22,8 @@ class FakeModelService implements ModelService {
     this.shape = shape
   }
 
-  startSimulation = jest.fn()
-  pauseSimulation = jest.fn()
+  startSimulation = vi.fn()
+  pauseSimulation = vi.fn()
 
   bindOutput = (callback: (data: Float32Array) => void): void => {
     this.outputCallback = callback
@@ -45,11 +45,11 @@ class FakeModelService implements ModelService {
     return this.shape
   }
 
-  updateForce = jest.fn()
+  updateForce = vi.fn()
 
-  loadDataArray = jest.fn()
+  loadDataArray = vi.fn()
 
-  setMass = jest.fn((mass: number) => {
+  setMass = vi.fn((mass: number) => {
     this.mass = mass
   })
 
@@ -104,13 +104,13 @@ function normalizeEnvelope(entry: WorkerEnvelope): Record<string, unknown> {
 }
 
 test('worker command flow snapshot', async () => {
-  jest.useFakeTimers()
-  jest.setSystemTime(new Date('2024-01-01T00:00:00.000Z'))
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date('2024-01-01T00:00:00.000Z'))
 
   const events: WorkerEnvelope[] = []
   const services: FakeModelService[] = []
 
-  const createModelService = jest.fn(
+  const createModelService = vi.fn(
     async (
       _modelPath: string,
       _gridSize?: [number, number],
@@ -129,16 +129,16 @@ test('worker command flow snapshot', async () => {
   const deps: ModelWorkerDeps = {
     createModelService,
     createAutoSaveService: () => ({
-      startAutoSave: jest.fn(),
-      pauseAutoSave: jest.fn(),
+      startAutoSave: vi.fn(),
+      pauseAutoSave: vi.fn(),
     }),
     fetchJson: async () => [[[[0, 1]]]],
     emit: (message: WorkerEnvelope) => {
       events.push(message)
     },
     logger: {
-      debug: jest.fn(),
-      error: jest.fn(),
+      debug: vi.fn(),
+      error: vi.fn(),
     },
     scheduleInterval: (fn, ms) => setInterval(fn, ms),
     clearInterval: id => clearInterval(id),
@@ -168,7 +168,7 @@ test('worker command flow snapshot', async () => {
   const service = services[0]
   service.emitOutput(new Float32Array([1, 2, 3, 4, 5, 6]))
   service.emitOutput(new Float32Array([7, 8, 9, 10, 11, 12]))
-  jest.advanceTimersByTime(1000)
+  vi.advanceTimersByTime(1000)
 
   const serializeCommand: WorkerCommand = {
     kind: 'command',
@@ -197,5 +197,5 @@ test('worker command flow snapshot', async () => {
   expect(snapshot).toMatchSnapshot()
 
   core.dispose()
-  jest.useRealTimers()
+  vi.useRealTimers()
 })

@@ -143,5 +143,18 @@ export default defineConfig(({ mode }) => {
         allow: ['..'],
       },
     },
+    // Vitest configuration
+    test: {
+      globals: true,
+      environment: 'node',
+      clearMocks: true,
+      alias: {
+        '@': resolve(__dirname, './src'),
+      },
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json', 'html'],
+      },
+    },
   }
 })
