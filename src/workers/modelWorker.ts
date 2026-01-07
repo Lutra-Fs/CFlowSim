@@ -11,6 +11,7 @@ import type { Vector2 } from 'three'
 import {
   type DeserializePayload,
   type InitPayload,
+  type ReinitPayload,
   type UpdateForcePayload,
   type WorkerCommand,
   type WorkerEnvelope,
@@ -322,6 +323,59 @@ export function createModelWorkerRuntime(
     }
   }
 
+  const handleReinit = async (
+    id: string,
+    payload?: ReinitPayload,
+  ): Promise<void> => {
+    if (modelService == null) {
+      emitResponseError('reinit', id, 'modelService not initialized')
+      return
+    }
+    if (!payload) {
+      emitResponseError('reinit', id, 'reinit payload missing')
+      return
+    }
+    try {
+      const { initConditionPath } = payload
+      if (
+        !initConditionPath.startsWith('/initData/') ||
+        !initConditionPath.endsWith('.json')
+      ) {
+        throw new Error(`invalid data path ${initConditionPath}`)
+      }
+
+      deps.logger.debug('Reinitializing with new init condition', {
+        path: initConditionPath,
+      })
+
+      const wasRunning = isRunning
+      if (isRunning) {
+        handlePause()
+      }
+
+      const data = await deps.fetchJson(initConditionPath)
+      const newService = await deps.createModelService(modelUrl, [64, 64], 1)
+      bindOutput(newService)
+      newService.loadDataArray(data as number[][][][])
+
+      modelService = newService
+      emitResponseOk('reinit', id)
+
+      if (wasRunning) {
+        handleStart()
+      }
+    } catch (error) {
+      deps.logger.error('Reinitialization failed', {
+        error: error instanceof Error ? error.message : String(error),
+      })
+      emitResponseError(
+        'reinit',
+        id,
+        error instanceof Error ? error.message : String(error),
+      )
+    }
+  }
+
   const handleCommand = async (command: WorkerCommand): Promise<void> => {
     deps.logger.debug('Worker received command', {
       name: command.name,
@@ -344,6 +398,9 @@ export function createModelWorkerRuntime(
         return
       case 'deserialize':
         await handleDeserialize(command.id, command.payload as DeserializePayload)
+        return
+      case 'reinit':
+        await handleReinit(command.id, command.payload as ReinitPayload)
         return
     }
   }

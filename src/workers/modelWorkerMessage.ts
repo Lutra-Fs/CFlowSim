@@ -7,8 +7,9 @@ export type WorkerCommandName =
   | 'deserialize'
   | 'update_force'
   | 'serialize'
+  | 'reinit'
 
-export type ResponseCommandName = 'init' | 'serialize' | 'deserialize'
+export type ResponseCommandName = 'init' | 'serialize' | 'deserialize' | 'reinit'
 
 export type SignalCommandName = Exclude<WorkerCommandName, ResponseCommandName>
 
@@ -26,6 +27,10 @@ export interface DeserializePayload {
   savedState: string | ModelSave
 }
 
+export interface ReinitPayload {
+  initConditionPath: string
+}
+
 export interface UpdateForcePayload {
   loc: Vector2Payload
   forceDelta: Vector2Payload
@@ -38,12 +43,14 @@ export interface CommandPayloadMap {
   deserialize: DeserializePayload
   update_force: UpdateForcePayload
   serialize: undefined
+  reinit: ReinitPayload
 }
 
 export interface CommandResponseMap {
   init: undefined
   deserialize: undefined
   serialize: { save: ModelSave }
+  reinit: undefined
 }
 
 export interface WorkerError {
@@ -93,6 +100,7 @@ const commandNames = new Set<WorkerCommandName>([
   'deserialize',
   'update_force',
   'serialize',
+  'reinit',
 ])
 
 export function isWorkerCommand(value: unknown): value is WorkerCommand {

@@ -4,6 +4,7 @@ import type {
   CommandResponseMap,
   DeserializePayload,
   InitPayload,
+  ReinitPayload,
   ResponseCommandName,
   SignalCommandName,
   UpdateForcePayload,
@@ -103,6 +104,10 @@ export class ModelWorkerClient {
 
   deserialize(payload: DeserializePayload): Promise<void> {
     return this.sendCommand('deserialize', payload).then(() => undefined)
+  }
+
+  reinit(payload: ReinitPayload): Promise<void> {
+    return this.sendCommand('reinit', payload).then(() => undefined)
   }
 
   private sendCommand<N extends ResponseCommandName>(

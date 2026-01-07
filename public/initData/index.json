@@ -1,0 +1,36 @@
+{
+  "categories": [
+    {
+      "id": "pvf_incomp_44",
+      "name": "PVF Incomp 44",
+      "items": [
+        { "id": "0", "path": "/initData/pvf_incomp_44_0.json", "name": "State 0" },
+        { "id": "1", "path": "/initData/pvf_incomp_44_1.json", "name": "State 1" },
+        { "id": "2", "path": "/initData/pvf_incomp_44_2.json", "name": "State 2" },
+        { "id": "3", "path": "/initData/pvf_incomp_44_3.json", "name": "State 3" },
+        { "id": "4", "path": "/initData/pvf_incomp_44_4.json", "name": "State 4" },
+        { "id": "5", "path": "/initData/pvf_incomp_44_5.json", "name": "State 5" },
+        { "id": "6", "path": "/initData/pvf_incomp_44_6.json", "name": "State 6" },
+        { "id": "7", "path": "/initData/pvf_incomp_44_7.json", "name": "State 7" },
+        { "id": "8", "path": "/initData/pvf_incomp_44_8.json", "name": "State 8" },
+        { "id": "9", "path": "/initData/pvf_incomp_44_9.json", "name": "State 9" }
+      ]
+    },
+    {
+      "id": "pvf_incomp_44_nonneg",
+      "name": "PVF Incomp 44 Non-Negative",
+      "items": [
+        { "id": "0", "path": "/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_0.json", "name": "State 0" },
+        { "id": "1", "path": "/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_1.json", "name": "State 1" },
+        { "id": "2", "path": "/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_2.json", "name": "State 2" },
+        { "id": "3", "path": "/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_3.json", "name": "State 3" },
+        { "id": "4", "path": "/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_4.json", "name": "State 4" },
+        { "id": "5", "path": "/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_5.json", "name": "State 5" },
+        { "id": "6", "path": "/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_6.json", "name": "State 6" },
+        { "id": "7", "path": "/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_7.json", "name": "State 7" },
+        { "id": "8", "path": "/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_8.json", "name": "State 8" },
+        { "id": "9", "path": "/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_9.json", "name": "State 9" }
+      ]
+    }
+  ]
+}

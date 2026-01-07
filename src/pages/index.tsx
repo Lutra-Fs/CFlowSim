@@ -19,7 +19,9 @@ import {
 } from '../components/PerfOverlay'
 import RestorePopup from '../components/RestoreComponents/RestorePopUp'
 import { SimulationParams } from '../components/SimulationParams'
+import { resolveAssetPath } from '../utils/assetUrl'
 import type { ModelWorkerClient } from '../workers/workerClient'
+import type { InitDataItem } from '@/services/initData/initDataService'
 
 // Debug logging for environment detection (can be removed after verification)
 console.log('[ENV] DEV:', import.meta.env.DEV, 'MODE:', import.meta.env.MODE)
@@ -47,6 +49,9 @@ export default function Home(props: IndexProp): JSX.Element {
   )
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [showPerfOverlay, setShowPerfOverlay] = useState(false)
+  const [currentInitStateId, setCurrentInitStateId] = useState<string>(
+    'pvf_incomp_44_nonneg:0',
+  )
   const rendererBackend = simulationParams.rendererBackend
   const perfStatsRef = useRef<PerfStats | null>(null)
   useEffect(() => {
@@ -99,6 +104,23 @@ export default function Home(props: IndexProp): JSX.Element {
     [rendererBackend],
   )
 
+  const handleInitStateChange = useCallback(
+    async (item: InitDataItem): Promise<void> => {
+      if (!workerClient) return
+
+      try {
+        const resolvedPath = resolveAssetPath(item.path)
+        await workerClient.reinit({ initConditionPath: resolvedPath })
+
+        const categoryId = item.path.split('/')[2]
+        setCurrentInitStateId(`${categoryId}:${item.id}`)
+      } catch (error) {
+        console.error('Failed to reinitialize with new init state', error)
+      }
+    },
+    [workerClient],
+  )
+
   return (
     <>
       {/* Debug mode indicator - only shows in development */}
@@ -108,6 +130,8 @@ export default function Home(props: IndexProp): JSX.Element {
         params={simulationParams}
         setParams={setSimulationParams}
         onOpenChange={setIsPanelOpen}
+        currentInitStateId={currentInitStateId}
+        onInitStateChange={handleInitStateChange}
       />
       <div
         className={`absolute inset-0 z-0 px-6 pt-[calc(var(--header-height)+var(--spacing-4))] pb-24 ${

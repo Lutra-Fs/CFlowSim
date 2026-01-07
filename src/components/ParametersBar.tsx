@@ -15,18 +15,40 @@ import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import ParameterLabel from './ParameterComponents/ParameterLabel'
 import type { SimulationParams } from './SimulationParams'
+import {
+  loadInitDataConfig,
+  type InitDataConfig,
+  type InitDataItem,
+  parseInitStateId,
+} from '@/services/initData/initDataService'
 
 export default function ParametersBar(props: {
   params: SimulationParams
   setParams: React.Dispatch<React.SetStateAction<SimulationParams>>
   onOpenChange?: (open: boolean) => void
+  currentInitStateId?: string
+  onInitStateChange?: (item: InitDataItem) => void
 }): JSX.Element {
   const [open, setOpen] = useState<boolean>(false)
   const [controlDifficulty, setControlDifficulty] = useState<'easy' | 'expert'>(
     'expert',
   )
+  const [initDataConfig, setInitDataConfig] = useState<InitDataConfig | null>(null)
+  const [initDataLoading, setInitDataLoading] = useState(true)
 
   const setParams = props.setParams
+
+  useEffect(() => {
+    loadInitDataConfig()
+      .then(config => {
+        setInitDataConfig(config)
+        setInitDataLoading(false)
+      })
+      .catch(error => {
+        console.error('Failed to load initData config', error)
+        setInitDataLoading(false)
+      })
+  }, [])
 
   useEffect(() => {
     props.onOpenChange?.(open)
@@ -304,23 +326,62 @@ export default function ParametersBar(props: {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-3">
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="w-full flex items-center justify-between gap-2 bg-black/20 text-white px-3 py-2 rounded-lg hover:bg-black/30 transition-colors border border-white/5 outline-none text-sm">
-                    <span className="font-medium">Choose Initial State</span>
-                    <ChevronDown className="h-4 w-4 opacity-70" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-[#1a2c3d] border-white/10 backdrop-blur-xl text-white">
-                    <DropdownMenuItem className="focus:bg-white/10 focus:text-white cursor-pointer">
-                      State 1
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="focus:bg-white/10 focus:text-white cursor-pointer">
-                      State 2
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="focus:bg-white/10 focus:text-white cursor-pointer">
-                      State 3
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {initDataLoading ? (
+                  <div className="text-white/50 text-xs py-2 text-center">
+                    Loading...
+                  </div>
+                ) : initDataConfig ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="w-full flex items-center justify-between gap-2 bg-black/20 text-white px-3 py-2 rounded-lg hover:bg-black/30 transition-colors border border-white/5 outline-none text-sm">
+                      <span className="font-medium truncate">
+                        {(() => {
+                          const parsed = props.currentInitStateId
+                            ? parseInitStateId(props.currentInitStateId)
+                            : null
+                          if (parsed) {
+                            const category = initDataConfig.categories.find(
+                              c => c.id === parsed.categoryId,
+                            )
+                            if (category) {
+                              const item = category.items.find(
+                                i => i.id === parsed.itemId,
+                              )
+                              if (item) {
+                                return `${category.name} - ${item.name}`
+                              }
+                            }
+                          }
+                          return 'Choose Initial State'
+                        })()}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-70 flex-shrink-0" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-[#1a2c3d] border-white/10 backdrop-blur-xl text-white max-h-[300px] overflow-y-auto">
+                      {initDataConfig.categories.map(category => (
+                        <div key={category.id}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-white/50 uppercase tracking-wider">
+                            {category.name}
+                          </div>
+                          {category.items.map(item => (
+                            <DropdownMenuItem
+                              key={`${category.id}:${item.id}`}
+                              className="focus:bg-white/10 focus:text-white cursor-pointer pl-6"
+                              onClick={() => {
+                                props.onInitStateChange?.(item)
+                              }}
+                            >
+                              {item.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </div>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <div className="text-white/50 text-xs py-2 text-center">
+                    Failed to load
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
