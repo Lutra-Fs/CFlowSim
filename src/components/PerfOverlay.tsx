@@ -1,6 +1,18 @@
 import { useFrame } from '@react-three/fiber'
 import { type JSX, useEffect, useRef, useState } from 'react'
 
+/**
+ * Debug mode indicator - shows current Vite mode in development
+ * Only rendered when import.meta.env.DEV is true
+ */
+export function DebugModeIndicator(): JSX.Element {
+  return (
+    <div className="fixed right-4 top-4 z-[100] rounded-lg bg-yellow-500/80 px-3 py-1.5 text-xs font-semibold text-black shadow-lg backdrop-blur-sm pointer-events-none">
+      DEV MODE • {import.meta.env.MODE}
+    </div>
+  )
+}
+
 export type PerfStats = {
   fps: number
   frameMs: number

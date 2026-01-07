@@ -1,5 +1,6 @@
 import type { Vector2 } from 'three'
 import { createLogger } from '@/utils/logger'
+import { resolveAssetPath } from '@/utils/assetUrl'
 import MockModelService from './MockModelService'
 import ONNXService from './ONNXService'
 import { TfjsService } from './TfjsService'
@@ -31,8 +32,8 @@ export async function createModelService(
   // deal with internal paths
   logger.debug('Initial model path', { modelPath })
 
-  if (modelPath.startsWith('/model/')) {
-    modelPath = new URL(modelPath, import.meta.url).href
+  if (modelPath.startsWith('/model/') || modelPath.startsWith('/initData/')) {
+    modelPath = resolveAssetPath(modelPath)
   }
   logger.debug('Resolved model path', { modelPath })
 

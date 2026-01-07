@@ -13,6 +13,7 @@ import ControlBar from '../components/ControlBar'
 import { DiffusionPlane } from '../components/DiffusionPlane'
 import ParBar from '../components/ParametersBar'
 import {
+  DebugModeIndicator,
   type PerfStats,
   PerfOverlay,
   PerfProbe,
@@ -25,6 +26,9 @@ import {
   type OutgoingMessage,
   RunnerFunc,
 } from '../workers/modelWorkerMessage'
+
+// Debug logging for environment detection (can be removed after verification)
+console.log('[ENV] DEV:', import.meta.env.DEV, 'MODE:', import.meta.env.MODE)
 
 // Extend React Three Fiber to support WebGPU materials (v9 syntax)
 // NOTE: Must extend(THREE) not extend({ MeshBasicNodeMaterial: ... }) to avoid TSL compilation errors
@@ -159,6 +163,9 @@ export default function Home(props: IndexProp): JSX.Element {
 
   return (
     <>
+      {/* Debug mode indicator - only shows in development */}
+      {import.meta.env.DEV && <DebugModeIndicator />}
+
       <ParBar
         params={simulationParams}
         setParams={setSimulationParams}

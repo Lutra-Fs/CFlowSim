@@ -1,10 +1,11 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
 import {
   copyFileSync,
   mkdirSync,
   existsSync,
+  rmSync,
 } from 'fs'
 import { resolve } from 'path'
 import type { Plugin } from 'vite'
@@ -63,46 +64,84 @@ function wasmMiddleware(): Plugin {
   }
 }
 
+// Plugin to exclude large asset files from production build
+// In dev mode, files are served from public/ normally
+// In production build, we remove model/ and initData/ from dist/ since they're loaded from GitHub
+// Function factory to capture mode and env from config
+function excludeLargeAssets(mode: string, env: Record<string, string>): Plugin {
+  return {
+    name: 'exclude-large-assets',
+    writeBundle() {
+      const includeAssets = env.VITE_INCLUDE_ASSETS === 'true'
+
+      // Exclude assets in production mode unless standalone
+      if (mode === 'production' && !includeAssets) {
+        const distDir = resolve(__dirname, 'dist')
+        const dirsToRemove = ['model', 'initData']
+
+        for (const dir of dirsToRemove) {
+          const targetPath = resolve(distDir, dir)
+          if (existsSync(targetPath)) {
+            rmSync(targetPath, { recursive: true, force: true })
+            console.log(`Excluded ${dir}/ from production build (loaded from GitHub)`)
+          }
+        }
+      }
+    },
+  }
+}
+
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-    copyOnnxWasmFiles(),
-    wasmMiddleware(),
-  ],
-  // Define global constants for dead code elimination
-  define: {
-    __DEV__: JSON.stringify(process.env.NODE_ENV !== 'production'),
-  },
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, './src'),
+export default defineConfig(({ mode }) => {
+  // Load env variables for config access (includes non-VITE_ prefixed vars)
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+    plugins: [
+      react(),
+      tailwindcss(),
+      copyOnnxWasmFiles(),
+      wasmMiddleware(),
+      excludeLargeAssets(mode, env),
+    ],
+    // Define global constants for dead code elimination
+    define: {
+      __DEV__: JSON.stringify(mode !== 'production'),
+      __PROD__: JSON.stringify(mode === 'production'),
+      // Use loaded env var, NOT process.env.VITE_* (which doesn't work in config)
+      'import.meta.env.VITE_ASSET_PREFIX': JSON.stringify(
+        env.VITE_ASSET_PREFIX || '/',
+      ),
     },
-  },
-  optimizeDeps: {
-    esbuildOptions: {
-      target: 'esnext',
-    },
-    // Exclude onnxruntime-web from pre-bundling to avoid WASM path issues
-    exclude: ['onnxruntime-web'],
-  },
-  build: {
-    target: 'esnext',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        dead_code: true,
-        drop_console: true,
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, './src'),
       },
     },
-  },
-  // Ensure WASM files are treated as assets and served with correct MIME type
-  assetsInclude: ['**/*.wasm'],
-  server: {
-    fs: {
-      // Allow serving files from node_modules/onnxruntime-web
-      allow: ['..'],
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'esnext',
+      },
+      // Exclude onnxruntime-web from pre-bundling to avoid WASM path issues
+      exclude: ['onnxruntime-web'],
     },
-  },
+    build: {
+      target: 'esnext',
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          dead_code: true,
+          drop_console: true,
+        },
+      },
+    },
+    // Ensure WASM files are treated as assets and served with correct MIME type
+    assetsInclude: ['**/*.wasm'],
+    server: {
+      fs: {
+        // Allow serving files from node_modules/onnxruntime-web
+        allow: ['..'],
+      },
+    },
+  }
 })

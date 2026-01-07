@@ -3,6 +3,7 @@ import NavBar from './components/NavBar'
 
 import './styles/main.css'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
+import { resolveAssetPath } from './utils/assetUrl'
 import Home from './pages'
 import AboutPage from './pages/about'
 import {
@@ -35,9 +36,10 @@ function AppContent(): JSX.Element {
     const message: IncomingMessage = {
       func: RunnerFunc.INIT,
       args: {
-        modelPath: '/model/bno_small_001.onnx',
-        initConditionPath:
+        modelPath: resolveAssetPath('/model/bno_small_001.onnx'),
+        initConditionPath: resolveAssetPath(
           '/initData/pvf_incomp_44_nonneg/pvf_incomp_44_nonneg_0.json',
+        ),
       } satisfies InitArgs,
     }
     if (simWorker === null) return
