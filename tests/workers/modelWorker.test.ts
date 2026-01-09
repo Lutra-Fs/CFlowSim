@@ -47,7 +47,9 @@ class FakeModelService implements ModelService {
 
   updateForce = vi.fn()
 
-  loadDataArray = vi.fn()
+  loadDataArray = vi.fn(
+    (_array: number[][][][], _options?: { normalized?: boolean }) => {},
+  )
 
   setMass = vi.fn((mass: number) => {
     this.mass = mass
@@ -81,6 +83,7 @@ function normalizeEnvelope(entry: WorkerEnvelope): Record<string, unknown> {
             mass: save.mass,
             time: save.time,
             inputTensor: save.inputTensor,
+            normalized: save.normalized,
           }
         : null,
     }

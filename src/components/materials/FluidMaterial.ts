@@ -37,13 +37,6 @@ export function createFluidMaterial(
     positionNode?: any
   }
 
-  console.log(
-    '[DEBUG FluidMaterial] densityTexture data:',
-    config.densityTexture.image.data,
-  )
-  console.log('[DEBUG FluidMaterial] lowColor:', config.lowColor)
-  console.log('[DEBUG FluidMaterial] highColor:', config.highColor)
-
   // Create TSL uniforms
   const lowColorUniform = uniform(
     vec3(config.lowColor.r, config.lowColor.g, config.lowColor.b),
@@ -57,8 +50,6 @@ export function createFluidMaterial(
   // Use texture() directly on the texture object instead of wrapping in uniform
   const densityValue = textureNode(config.densityTexture).r
 
-  console.log('[DEBUG FluidMaterial] densityValue node:', densityValue)
-
   // Vertex displacement for height map rendering
   // This modifies the vertex position based on density
   if (config.enableHeightMap) {
@@ -68,11 +59,6 @@ export function createFluidMaterial(
   // Fragment color: interpolate between low and high colors based on density
   const normalizedDensity = clamp(densityValue, 0.0, 1.0)
   material.colorNode = mix(lowColorUniform, highColorUniform, normalizedDensity)
-
-  // TEST: Set a simple red color to verify material works
-  material.colorNode = vec3(1, 0, 0)
-
-  console.log('[DEBUG FluidMaterial] Final colorNode:', material.colorNode)
 
   return material
 }

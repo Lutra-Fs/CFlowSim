@@ -72,6 +72,7 @@ const modelSaveSchema: JSONSchemaType<ModelSave> = {
       },
     },
     mass: { type: 'number' },
+    normalized: { type: 'boolean' },
   },
   required: ['modelType', 'modelUrl', 'inputTensor', 'mass'],
   additionalProperties: false,

@@ -78,9 +78,13 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     }
     return [width, height, 1] as const
   }, [viewport.height, viewport.width])
+  const lowColorHex = props.params.densityLowColour.getHexString()
+  const highColorHex = props.params.densityHighColour.getHexString()
+
   const baseColor = useMemo(() => {
-    return props.params.densityLowColour.clone().multiplyScalar(0.35)
-  }, [props.params.densityLowColour])
+    const color = new t.Color(`#${lowColorHex}`)
+    return color.multiplyScalar(0.35)
+  }, [lowColorHex])
 
   // Dispose texture on unmount
   useEffect(() => {
@@ -91,35 +95,17 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
 
   // Create color node from texture with low/high color interpolation
   const densityColorNode = useMemo(() => {
-    // Create texture sampling node directly from texture
-    // texture() from 'three/tsl' accepts a Texture and returns a TextureNode
     const densityTextureNode = textureNode(densityTexture)
     const densityValue = densityTextureNode.r
 
-    // Create color uniforms for low and high density colors
-    const lowColorUniform = uniform(
-      vec3(
-        props.params.densityLowColour.r,
-        props.params.densityLowColour.g,
-        props.params.densityLowColour.b,
-      ),
-    )
-    const highColorUniform = uniform(
-      vec3(
-        props.params.densityHighColour.r,
-        props.params.densityHighColour.g,
-        props.params.densityHighColour.b,
-      ),
-    )
+    const lowColor = new t.Color(`#${lowColorHex}`)
+    const highColor = new t.Color(`#${highColorHex}`)
+    const lowColorUniform = uniform(vec3(lowColor.r, lowColor.g, lowColor.b))
+    const highColorUniform = uniform(vec3(highColor.r, highColor.g, highColor.b))
 
-    // Normalize density to 0-1 range and interpolate between low and high colors
     const normalizedDensity = clamp(densityValue, 0.0, 1.0)
     return mix(lowColorUniform, highColorUniform, normalizedDensity)
-  }, [
-    densityTexture,
-    props.params.densityLowColour,
-    props.params.densityHighColour,
-  ])
+  }, [densityTexture, lowColorHex, highColorHex])
 
   const colorNode = useMemo(() => {
     if (!props.params.renderHeightMap) {
@@ -147,7 +133,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     // When height map mode: displace vertices based on density
     const densityTextureNode = textureNode(densityTexture)
     const densityValue = densityTextureNode.r
-    const heightScaleUniform = uniform(20.0)
+    const heightScaleUniform = uniform(6.6666666667)
     const topThreshold = uniform(baseThickness / 2 - 0.002)
     const topScale = uniform(1 / 0.002)
     const topMask = clamp(positionLocal.z.sub(topThreshold).mul(topScale), 0, 1)
@@ -345,7 +331,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
         >
           <boxGeometry args={[1, 1, baseThickness, segments, segments, 1]} />
           <meshBasicNodeMaterial
-            key="height"
+            key={`height-${lowColorHex}-${highColorHex}`}
             colorNode={colorNode}
             positionNode={positionNode}
           />
@@ -373,7 +359,10 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
         onPointerUp={handlePointerUp}
       >
         <planeGeometry args={[1, 1, segments, segments]} />
-        <meshBasicNodeMaterial key="flat" colorNode={densityColorNode} />
+      <meshBasicNodeMaterial
+        key={`flat-${lowColorHex}-${highColorHex}`}
+        colorNode={densityColorNode}
+      />
       </mesh>
     </group>
   )

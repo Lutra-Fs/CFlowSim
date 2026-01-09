@@ -20,11 +20,11 @@ import {
 import RestorePopup from '../components/RestoreComponents/RestorePopUp'
 import { SimulationParams } from '../components/SimulationParams'
 import { resolveAssetPath } from '../utils/assetUrl'
+import { createLogger } from '../utils/logger'
 import type { ModelWorkerClient } from '../workers/workerClient'
 import type { InitDataItem } from '@/services/initData/initDataService'
 
-// Debug logging for environment detection (can be removed after verification)
-console.log('[ENV] DEV:', import.meta.env.DEV, 'MODE:', import.meta.env.MODE)
+const logger = createLogger('HomePage')
 
 // Extend React Three Fiber to support WebGPU materials (v9 syntax)
 // NOTE: Must extend(THREE) not extend({ MeshBasicNodeMaterial: ... }) to avoid TSL compilation errors
@@ -56,7 +56,6 @@ export default function Home(props: IndexProp): JSX.Element {
   const perfStatsRef = useRef<PerfStats | null>(null)
   useEffect(() => {
     const confirmExit = (e: BeforeUnloadEvent): void => {
-      console.log('beforeunload event triggered')
       e.preventDefault()
       e.returnValue = ''
     }
@@ -80,7 +79,7 @@ export default function Home(props: IndexProp): JSX.Element {
       // biome-ignore lint/suspicious/noExplicitAny: WebGPURenderer expects different props than WebGL renderer
       props: any,
     ) => {
-      console.log('[DEBUG] Initializing WebGPURenderer...')
+      logger.debug('Initializing WebGPURenderer')
       // R3F passes WebGL types, but WebGPURenderer expects WebGPU types
       // Filter out incompatible properties like powerPreference
       const { powerPreference: _powerPreference, ...webgpuProps } = props
@@ -93,12 +92,10 @@ export default function Home(props: IndexProp): JSX.Element {
       })
       await renderer.init()
       renderer.setClearColor(0x000000, 0)
-      console.log(
-        '[DEBUG] WebGPURenderer backend:',
-        renderer.backend?.constructor?.name,
-        'forceWebGL:',
+      logger.debug('WebGPURenderer initialized', {
+        backend: renderer.backend?.constructor?.name,
         forceWebGL,
-      )
+      })
       return renderer
     },
     [rendererBackend],

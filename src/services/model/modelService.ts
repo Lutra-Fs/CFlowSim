@@ -4,6 +4,7 @@ import { resolveAssetPath } from '@/utils/assetUrl'
 import MockModelService from './MockModelService'
 import ONNXService from './ONNXService'
 import { TfjsService } from './TfjsService'
+import { loadModelMeta, type ModelNormalization } from './modelMeta'
 
 const logger = createLogger('modelService')
 
@@ -15,7 +16,10 @@ export interface ModelService {
   getMass: () => number
   getInputShape: () => [number, number, number, number]
   updateForce: (pos: Vector2, forceDelta: Vector2) => void
-  loadDataArray: (array: number[][][][]) => void
+  loadDataArray: (
+    array: number[][][][],
+    options?: { normalized?: boolean },
+  ) => void
   setMass: (mass: number) => void
   getType: () => string
 }
@@ -41,6 +45,10 @@ export async function createModelService(
   // TODO: read the model type from the model definition file
   const modelType = modelPath.split('.').pop()
   logger.debug('Model type detected', { modelType })
+  const normalization: ModelNormalization | null =
+    modelType === 'json' || modelType === 'onnx'
+      ? (await loadModelMeta(modelPath))?.normalization ?? null
+      : null
   switch (modelType) {
     case 'json':
       return await TfjsService.createService(
@@ -51,6 +59,7 @@ export async function createModelService(
         outputChannelSize,
         fpsLimit,
         (await isWebGPUAvailable()) ? 'webgpu' : 'webgl',
+        normalization,
       )
     case 'onnx':
       return await ONNXService.createService(
@@ -60,9 +69,8 @@ export async function createModelService(
         channelSize,
         outputChannelSize,
         fpsLimit,
-        // ignore the backend setting for now
-        // since ONNXRuntime doesn't support all ops we are using in webgpu
-        // await isWebGPUAvailable() ? 'webgpu' : 'wasm',
+        'wasm',
+        normalization,
       )
     case 'mock':
       return MockModelService.createService(
@@ -95,6 +103,7 @@ export function modelSerialize(
     modelType: model.getType(),
     modelUrl: url,
     time: new Date().toISOString(),
+    normalized: true,
   }
 }
 
@@ -111,7 +120,9 @@ export async function modelDeserialize(
     input.inputTensor[0][0][0].length,
     15,
   )
-  modelService.loadDataArray(input.inputTensor)
+  modelService.loadDataArray(input.inputTensor, {
+    normalized: input.normalized ?? true,
+  })
   modelService.setMass(input.mass)
   return modelService
 }
@@ -122,6 +133,7 @@ export interface ModelSave {
   time: string
   inputTensor: number[][][][]
   mass: number
+  normalized?: boolean
 }
 
 function reshape(

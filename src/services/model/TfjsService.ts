@@ -4,6 +4,7 @@ import type { ModelService } from './modelService'
 import '@tensorflow/tfjs-backend-webgpu'
 import { RegressionMonitor } from '@/services/regression/regressionMonitor'
 import { createLogger } from '@/utils/logger'
+import type { ModelNormalization } from './modelMeta'
 
 // Use a const that gets replaced by Vite at build time
 declare const __DEV__: boolean
@@ -33,6 +34,12 @@ export class TfjsService implements ModelService {
   density!: tf.Variable<tf.Rank.R4>
   velocity!: tf.Variable<tf.Rank.R4>
   pressure!: tf.TensorBuffer<tf.Rank.R4>
+  private normScale: {
+    density: number
+    velocity: number
+    forceX: number
+    forceY: number
+  } | null = null
 
   isPaused: boolean
   private outputCallback!: (data: Float32Array) => void
@@ -58,6 +65,7 @@ export class TfjsService implements ModelService {
     outputChannelSize = 3,
     fpsLimit = 15,
     backend = 'webgl',
+    normalization: ModelNormalization | null = null,
   ): Promise<TfjsService> {
     await tf.setBackend(backend)
     const service = new TfjsService()
@@ -68,10 +76,14 @@ export class TfjsService implements ModelService {
     service.channelSize = channelSize
     service.outputChannelSize = outputChannelSize
     service.fpsLimit = fpsLimit
+    service.setNormalization(normalization)
     return service
   }
 
-  loadDataArray(array: number[][][][]): void {
+  loadDataArray(
+    array: number[][][][],
+    options?: { normalized?: boolean },
+  ): void {
     this.logger.debug('Loading data array', {
       shape: `${array.length}x${array[0]?.length}x${array[0]?.[0]?.length}x${array[0]?.[0]?.[0]?.length}`,
     })
@@ -80,6 +92,9 @@ export class TfjsService implements ModelService {
       [this.batchSize, ...this.gridSize, this.channelSize],
       'float32',
     )
+    const disposeIfDifferent = (value: tf.Tensor, source: tf.Tensor) => {
+      if (value !== source) value.dispose()
+    }
     // 0: partial density
     // 1, 2: partial velocity
     // 3, 4: Pressure
@@ -87,9 +102,14 @@ export class TfjsService implements ModelService {
       [0, 0, 0, 0],
       [this.batchSize, ...this.gridSize, 1],
     )
-    const normalizedDensity = TfjsService.normalizeTensor(density)
+    const normalizedDensity = options?.normalized
+      ? density
+      : this.normalizeTensor(density, 'density')
+    const clampedDensity = normalizedDensity.maximum(0)
+    this.density = tf.variable(clampedDensity)
+    clampedDensity.dispose()
+    disposeIfDifferent(normalizedDensity, density)
     density.dispose()
-    this.density = tf.variable(normalizedDensity.maximum(0))
     const velocityX = arrayTensor.slice(
       [0, 0, 0, 1],
       [this.batchSize, ...this.gridSize, 1],
@@ -98,15 +118,19 @@ export class TfjsService implements ModelService {
       [0, 0, 0, 2],
       [this.batchSize, ...this.gridSize, 1],
     )
-    const normalizedVelocityX = TfjsService.normalizeTensor(velocityX)
-    const normalizedVelocityY = TfjsService.normalizeTensor(velocityY)
-    velocityX.dispose()
-    velocityY.dispose()
+    const normalizedVelocityX = options?.normalized
+      ? velocityX
+      : this.normalizeTensor(velocityX, 'velocity')
+    const normalizedVelocityY = options?.normalized
+      ? velocityY
+      : this.normalizeTensor(velocityY, 'velocity')
     this.velocity = tf.variable(
       tf.concat([normalizedVelocityX, normalizedVelocityY], 3),
     ) as tf.Variable<tf.Rank.R4>
-    normalizedVelocityX.dispose()
-    normalizedVelocityY.dispose()
+    disposeIfDifferent(normalizedVelocityX, velocityX)
+    disposeIfDifferent(normalizedVelocityY, velocityY)
+    velocityX.dispose()
+    velocityY.dispose()
     const pressureX = arrayTensor.slice(
       [0, 0, 0, 3],
       [this.batchSize, ...this.gridSize, 1],
@@ -115,25 +139,38 @@ export class TfjsService implements ModelService {
       [0, 0, 0, 4],
       [this.batchSize, ...this.gridSize, 1],
     )
-    const normalizedPressureX = TfjsService.normalizeTensor(pressureX)
-    const normalizedPressureY = TfjsService.normalizeTensor(pressureY)
-    pressureX.dispose()
-    pressureY.dispose()
+    const normalizedPressureX = options?.normalized
+      ? pressureX
+      : this.normalizeTensor(pressureX, 'forceX')
+    const normalizedPressureY = options?.normalized
+      ? pressureY
+      : this.normalizeTensor(pressureY, 'forceY')
     this.pressure = tf
       .concat([normalizedPressureX, normalizedPressureY], 3)
       .bufferSync() as tf.TensorBuffer<tf.Rank.R4>
-    normalizedPressureX.dispose()
+    disposeIfDifferent(normalizedPressureX, pressureX)
+    disposeIfDifferent(normalizedPressureY, pressureY)
+    pressureX.dispose()
+    pressureY.dispose()
     this.density.assign(this.density.maximum(0))
     this.mass = this.density.sum()
     this.logger.debug('Mass calculated', { mass: this.mass.dataSync()[0] })
   }
 
-  static normalizeTensor(tensor: tf.Tensor): tf.Tensor {
-    return tf.tidy(() => {
-      const { mean, variance } = tf.moments(tensor)
-      const epsilon = tf.scalar(EPS)
-      return tensor.sub(mean).div(variance.add(epsilon).sqrt())
-    })
+  private normalizeTensor(
+    tensor: tf.Tensor,
+    channel: 'density' | 'velocity' | 'forceX' | 'forceY',
+  ): tf.Tensor {
+    if (!this.normScale) {
+      return tf.tidy(() => {
+        const { mean, variance } = tf.moments(tensor)
+        const epsilon = tf.scalar(EPS)
+        return tensor.sub(mean).div(variance.add(epsilon).sqrt())
+      })
+    }
+    const scale = this.normScale[channel]
+    if (scale === 1) return tensor
+    return tensor.mul(scale)
   }
 
   pauseSimulation(): void {
@@ -258,15 +295,18 @@ export class TfjsService implements ModelService {
   }
 
   updateForce(pos: Vector2, forceDelta: Vector2, batchIndex = 0): void {
+    const scale = this.normScale
+    const forceX = scale ? forceDelta.x * scale.forceX : forceDelta.x
+    const forceY = scale ? forceDelta.y * scale.forceY : forceDelta.y
     this.pressure.set(
-      this.pressure.get(batchIndex, pos.x, pos.y, 0) + forceDelta.x,
+      this.pressure.get(batchIndex, pos.x, pos.y, 0) + forceX,
       batchIndex,
       pos.x,
       pos.y,
       3,
     )
     this.pressure.set(
-      this.pressure.get(batchIndex, pos.x, pos.y, 1) + forceDelta.y,
+      this.pressure.get(batchIndex, pos.x, pos.y, 1) + forceY,
       batchIndex,
       pos.x,
       pos.y,
@@ -302,5 +342,20 @@ export class TfjsService implements ModelService {
 
   getType(): string {
     return 'tfjs'
+  }
+
+  private setNormalization(normalization: ModelNormalization | null): void {
+    if (!normalization) {
+      this.normScale = null
+      return
+    }
+    const safeInv = (value: number) => (value > 0 ? 1 / value : 1)
+    const forceAlpha = normalization.forceScaleAlpha ?? 1
+    this.normScale = {
+      density: safeInv(normalization.densitySd),
+      velocity: safeInv(normalization.velocitySd),
+      forceX: safeInv(normalization.forceSd[0]) * forceAlpha,
+      forceY: safeInv(normalization.forceSd[1]),
+    }
   }
 }

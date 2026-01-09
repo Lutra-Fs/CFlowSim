@@ -3,6 +3,7 @@ import type { Vector2 } from 'three'
 import { RegressionMonitor } from '@/services/regression/regressionMonitor'
 import { createLogger } from '@/utils/logger'
 import type { ModelService } from './modelService'
+import type { ModelNormalization } from './modelMeta'
 
 // Use a const that gets replaced by Vite at build time
 declare const __DEV__: boolean
@@ -38,6 +39,13 @@ export default class ONNXService implements ModelService {
   private outputSize: number
   private outputCallback!: (data: Float32Array) => void
   private matrixArray: Float32Array
+  private normalization: ModelNormalization | null = null
+  private normScale: {
+    density: number
+    velocity: number
+    forceX: number
+    forceY: number
+  } | null = null
   // 0: partial density
   // 1, 2: partial velocity
   // 3, 4: Force (currently not used)
@@ -71,6 +79,7 @@ export default class ONNXService implements ModelService {
     outputChannelSize = 3,
     fpsLimit = 15,
     backend = 'wasm',
+    normalization: ModelNormalization | null = null,
   ): Promise<ONNXService> {
     logger.debug('Creating ONNX model service')
     const modelServices = new ONNXService()
@@ -81,6 +90,7 @@ export default class ONNXService implements ModelService {
       channelSize,
       outputChannelSize,
       backend,
+      normalization,
     )
     modelServices.fpsLimit = fpsLimit
     logger.debug('ONNX model service created')
@@ -107,6 +117,7 @@ export default class ONNXService implements ModelService {
     channelSize: number,
     outputChannelSize: number,
     backend: string,
+    normalization: ModelNormalization | null,
   ): Promise<void> {
     this.logger.debug('Initializing ONNX session')
     const metaUrl = new URL(import.meta.url)
@@ -134,14 +145,20 @@ export default class ONNXService implements ModelService {
     this.tensorShape = [batchSize, gridSize[0], gridSize[1], channelSize]
     this.tensorSize = batchSize * gridSize[0] * gridSize[1] * channelSize
     this.outputSize = batchSize * gridSize[0] * gridSize[1] * outputChannelSize
+    this.setNormalization(normalization)
   }
 
-  loadDataArray(data: number[][][][]): void {
+  loadDataArray(
+    data: number[][][][],
+    options?: { normalized?: boolean },
+  ): void {
     this.logger.debug('Loading data array', {
       shape: `${data.length}x${data[0]?.length}x${data[0]?.[0]?.length}x${data[0]?.[0]?.[0]?.length}`,
     })
     this.matrixArray = new Float32Array(data.flat(3))
-    this.normalizeMatrix(this.matrixArray)
+    if (!options?.normalized) {
+      this.normalizeMatrix(this.matrixArray)
+    }
     if (this.matrixArray.length !== this.tensorSize) {
       throw new Error(
         `matrixArray length ${this.matrixArray.length} does not match tensorSize ${this.tensorSize}`,
@@ -247,6 +264,10 @@ export default class ONNXService implements ModelService {
 
   private normalizeMatrix(matrix: Float32Array): void {
     this.logger.debug('Normalizing matrix channels')
+    if (this.normScale) {
+      this.applyNormalization(matrix)
+      return
+    }
     for (let i = 0; i < this.channelSize; i++) {
       matrix = this.normalizeMatrixChannel(matrix, i)
     }
@@ -368,6 +389,12 @@ export default class ONNXService implements ModelService {
 
   updateForce(pos: Vector2, forceDelta: Vector2): void {
     const index: number = this.getIndex(pos)
+    const scale = this.normScale
+    if (scale) {
+      this.matrixArray[index + 3] += forceDelta.x * scale.forceX
+      this.matrixArray[index + 4] += forceDelta.y * scale.forceY
+      return
+    }
     this.matrixArray[index + 3] += forceDelta.x
     this.matrixArray[index + 4] += forceDelta.y
   }
@@ -435,6 +462,36 @@ export default class ONNXService implements ModelService {
 
   private roundFloat(value: number, decimal = 4): number {
     return Math.round(value * 10 ** decimal) / 10 ** decimal
+  }
+
+  private setNormalization(normalization: ModelNormalization | null): void {
+    this.normalization = normalization
+    if (!normalization) {
+      this.normScale = null
+      return
+    }
+    const safeInv = (value: number) => (value > 0 ? 1 / value : 1)
+    const forceAlpha = normalization.forceScaleAlpha ?? 1
+    this.normScale = {
+      density: safeInv(normalization.densitySd),
+      velocity: safeInv(normalization.velocitySd),
+      forceX: safeInv(normalization.forceSd[0]) * forceAlpha,
+      forceY: safeInv(normalization.forceSd[1]),
+    }
+  }
+
+  private applyNormalization(matrix: Float32Array): void {
+    if (!this.normScale) return
+    const { density, velocity, forceX, forceY } = this.normScale
+    let index = 0
+    while (index < this.tensorSize) {
+      if (this.channelSize >= 1) matrix[index] *= density
+      if (this.channelSize >= 2) matrix[index + 1] *= velocity
+      if (this.channelSize >= 3) matrix[index + 2] *= velocity
+      if (this.channelSize >= 4) matrix[index + 3] *= forceX
+      if (this.channelSize >= 5) matrix[index + 4] *= forceY
+      index += this.channelSize
+    }
   }
 
   getInputTensor(): Float32Array {

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "channels": {
+    "density": 0,
+    "velocity": [1, 2],
+    "force": [3, 4]
+  },
+  "normalization": {
+    "densitySd": 1.8046090046,
+    "velocitySd": 0.6287912319,
+    "forceSd": [0.6422785801, 0.6422785801],
+    "forceScaleAlpha": 1
+  }
+}

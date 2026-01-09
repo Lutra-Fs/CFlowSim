@@ -44,7 +44,10 @@ export default class MockModelService implements ModelService {
     return this.inputTensor
   }
 
-  loadDataArray(input: number[][][][]): void {
+  loadDataArray(
+    input: number[][][][],
+    _options?: { normalized?: boolean },
+  ): void {
     this.inputTensor = new Float32Array(input.flat(3))
   }
 

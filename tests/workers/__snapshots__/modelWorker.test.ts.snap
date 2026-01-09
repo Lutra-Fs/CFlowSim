@@ -37,6 +37,7 @@ exports[`worker command flow snapshot 1`] = `
       "mass": 3,
       "modelType": "mock",
       "modelUrl": "/model/test.onnx",
+      "normalized": true,
       "time": "2024-01-01T00:00:01.000Z",
     },
   },
