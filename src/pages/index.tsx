@@ -10,8 +10,10 @@ import {
 import * as THREE from 'three/webgpu'
 import type { InitDataItem } from '@/services/initData/initDataService'
 import ControlBar from '../components/ControlBar'
+import ControlBarNew from '../components/ControlBarNew'
 import { DiffusionPlane } from '../components/DiffusionPlane'
 import ParBar from '../components/ParametersBar'
+import ParametersBarNew from '../components/ParametersBarNew'
 import {
   DebugModeIndicator,
   PerfOverlay,
@@ -118,21 +120,36 @@ export default function Home(props: IndexProp): JSX.Element {
     [workerClient],
   )
 
+  const useNewUX = import.meta.env.VITE_NEW_UX === 'true'
+
   return (
     <>
       {/* Debug mode indicator - only shows in development */}
       {import.meta.env.DEV && <DebugModeIndicator />}
 
-      <ParBar
-        params={simulationParams}
-        setParams={setSimulationParams}
-        onOpenChange={setIsPanelOpen}
-        currentInitStateId={currentInitStateId}
-        onInitStateChange={handleInitStateChange}
-      />
+      {useNewUX ? (
+        <ParametersBarNew
+          params={simulationParams}
+          setParams={setSimulationParams}
+          onOpenChange={setIsPanelOpen}
+          currentInitStateId={currentInitStateId}
+          onInitStateChange={handleInitStateChange}
+        />
+      ) : (
+        <ParBar
+          params={simulationParams}
+          setParams={setSimulationParams}
+          onOpenChange={setIsPanelOpen}
+          currentInitStateId={currentInitStateId}
+          onInitStateChange={handleInitStateChange}
+        />
+      )}
+
       <div
         className={`absolute inset-0 z-0 px-6 pt-[calc(var(--header-height)+var(--spacing-4))] pb-24 ${
-          isPanelOpen ? 'pl-[calc(var(--sidebar-width)+var(--spacing-6))]' : ''
+          isPanelOpen && !useNewUX
+            ? 'pl-[calc(var(--sidebar-width)+var(--spacing-6))]'
+            : ''
         }`}
       >
         <Canvas
@@ -171,12 +188,21 @@ export default function Home(props: IndexProp): JSX.Element {
           statsRef={perfStatsRef}
         />
       ) : null}
-      <ControlBar
-        workerClient={workerClient}
-        setRestorePopupVisible={setRestorePopupVisible}
-        showPerfOverlay={showPerfOverlay}
-        setShowPerfOverlay={setShowPerfOverlay}
-      />
+      {useNewUX ? (
+        <ControlBarNew
+          workerClient={workerClient}
+          setRestorePopupVisible={setRestorePopupVisible}
+          showPerfOverlay={showPerfOverlay}
+          setShowPerfOverlay={setShowPerfOverlay}
+        />
+      ) : (
+        <ControlBar
+          workerClient={workerClient}
+          setRestorePopupVisible={setRestorePopupVisible}
+          showPerfOverlay={showPerfOverlay}
+          setShowPerfOverlay={setShowPerfOverlay}
+        />
+      )}
     </>
   )
 }

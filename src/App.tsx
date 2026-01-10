@@ -1,9 +1,11 @@
 import { type JSX, useEffect, useState } from 'react'
 import NavBar from './components/NavBar'
+import NavBarNew from './components/NavBarNew'
 
 import './styles/main.css'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Home from './pages'
+import AboutPageNew from './pages/AboutNew'
 import AboutPage from './pages/about'
 import { resolveAssetPath } from './utils/assetUrl'
 import { ModelWorkerClient } from './workers/workerClient'
@@ -40,10 +42,15 @@ function AppContent(): JSX.Element {
   const { setThemeMode } = useTheme()
 
   const isHomeActive = page === 0
+  const useNewUX = import.meta.env.VITE_NEW_UX === 'true'
 
   return (
     <main className="flex flex-col w-screen h-screen bg-gray-700 data-[theme-light]:bg-white overflow-hidden">
-      <NavBar setPage={setPage} setCurThemeMode={setThemeMode} />
+      {useNewUX ? (
+        <NavBarNew setPage={setPage} setCurThemeMode={setThemeMode} />
+      ) : (
+        <NavBar setPage={setPage} setCurThemeMode={setThemeMode} />
+      )}
       <div className="flex-1 relative w-full h-full overflow-hidden">
         <div
           className={`absolute inset-0 ${isHomeActive ? '' : 'pointer-events-none opacity-0'}`}
@@ -52,7 +59,7 @@ function AppContent(): JSX.Element {
         </div>
         {!isHomeActive ? (
           <div className="absolute inset-0">
-            <AboutPage />
+            {useNewUX ? <AboutPageNew /> : <AboutPage />}
           </div>
         ) : null}
       </div>
