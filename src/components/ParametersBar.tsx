@@ -13,14 +13,14 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import ParameterLabel from './ParameterComponents/ParameterLabel'
-import type { SimulationParams } from './SimulationParams'
 import {
-  loadInitDataConfig,
   type InitDataConfig,
   type InitDataItem,
+  loadInitDataConfig,
   parseInitStateId,
 } from '@/services/initData/initDataService'
+import ParameterLabel from './ParameterComponents/ParameterLabel'
+import type { SimulationParams } from './SimulationParams'
 
 export default function ParametersBar(props: {
   params: SimulationParams
@@ -33,7 +33,9 @@ export default function ParametersBar(props: {
   const [controlDifficulty, setControlDifficulty] = useState<'easy' | 'expert'>(
     'expert',
   )
-  const [initDataConfig, setInitDataConfig] = useState<InitDataConfig | null>(null)
+  const [initDataConfig, setInitDataConfig] = useState<InitDataConfig | null>(
+    null,
+  )
   const [initDataLoading, setInitDataLoading] = useState(true)
 
   const setParams = props.setParams
@@ -249,7 +251,7 @@ export default function ParametersBar(props: {
                       <ToggleGroup
                         multiple={false}
                         value={[
-                          props.params.isCameraControlMode ? 'camera' : 'force'
+                          props.params.isCameraControlMode ? 'camera' : 'force',
                         ]}
                         onValueChange={value => {
                           if (!value || value.length === 0) return

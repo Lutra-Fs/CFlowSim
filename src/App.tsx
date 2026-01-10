@@ -3,9 +3,9 @@ import NavBar from './components/NavBar'
 
 import './styles/main.css'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
-import { resolveAssetPath } from './utils/assetUrl'
 import Home from './pages'
 import AboutPage from './pages/about'
+import { resolveAssetPath } from './utils/assetUrl'
 import { ModelWorkerClient } from './workers/workerClient'
 
 function AppContent(): JSX.Element {
@@ -48,10 +48,7 @@ function AppContent(): JSX.Element {
         <div
           className={`absolute inset-0 ${isHomeActive ? '' : 'pointer-events-none opacity-0'}`}
         >
-          <Home
-            workerClient={workerClient}
-            isActive={isHomeActive}
-          />
+          <Home workerClient={workerClient} isActive={isHomeActive} />
         </div>
         {!isHomeActive ? (
           <div className="absolute inset-0">

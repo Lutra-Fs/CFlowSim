@@ -9,7 +9,11 @@ export type WorkerCommandName =
   | 'serialize'
   | 'reinit'
 
-export type ResponseCommandName = 'init' | 'serialize' | 'deserialize' | 'reinit'
+export type ResponseCommandName =
+  | 'init'
+  | 'serialize'
+  | 'deserialize'
+  | 'reinit'
 
 export type SignalCommandName = Exclude<WorkerCommandName, ResponseCommandName>
 

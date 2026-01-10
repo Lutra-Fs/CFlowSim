@@ -33,7 +33,9 @@ export function resolveAssetPath(relativePath: string): string {
   const prefix = getAssetPrefix()
 
   // Remove leading slash from relativePath if present
-  const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath
+  const cleanPath = relativePath.startsWith('/')
+    ? relativePath.slice(1)
+    : relativePath
 
   // Remove trailing slash from prefix if present
   const cleanPrefix = prefix.endsWith('/') ? prefix : `${prefix}/`

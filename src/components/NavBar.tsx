@@ -46,12 +46,18 @@ export default function NavBar(props: NavBarProps): JSX.Element {
           setIsShowExtend(curr => !curr)
         }}
         className="inline flex items-center justify-center w-10 h-10 text-white text-2xl cursor-pointer md:hidden hover:bg-white/10 rounded-lg transition-colors"
+        aria-label={isShowExtend ? 'Close main menu' : 'Open main menu'}
+        aria-expanded={isShowExtend}
+        aria-controls="mobile-menu"
       >
         {isShowExtend ? <>&#10005;</> : <>&#8803;</>}
       </button>
 
       {/* Desktop navigation */}
-      <nav className="hidden md:flex flex-row items-center gap-2">
+      <nav
+        className="hidden md:flex flex-row items-center gap-2"
+        aria-label="Main navigation"
+      >
         <Button
           onClick={() => {
             setPage(0)
@@ -74,7 +80,8 @@ export default function NavBar(props: NavBarProps): JSX.Element {
           onClick={() => {
             setCurThemeMode('light')
           }}
-          className="font-mono text-xs font-semibold text-black bg-[#f3f3f3] hover:bg-white h-9 px-4 rounded-md shadow-sm transition-all"
+          aria-pressed={lightTheme}
+          className="font-mono text-xs font-semibold text-black bg-[#f3f3f3] hover:bg-white h-9 px-4 rounded-md shadow-sm transition-all aria-pressed:ring-2 aria-pressed:ring-offset-2 aria-pressed:ring-[#00a9ce]"
         >
           Light
         </button>
@@ -83,7 +90,8 @@ export default function NavBar(props: NavBarProps): JSX.Element {
           onClick={() => {
             setCurThemeMode('dark')
           }}
-          className="font-mono text-xs font-semibold text-black bg-[#f3f3f3] hover:bg-white h-9 px-4 rounded-md shadow-sm transition-all text-opacity-60 hover:text-opacity-100"
+          aria-pressed={!lightTheme}
+          className="font-mono text-xs font-semibold text-black bg-[#f3f3f3] hover:bg-white h-9 px-4 rounded-md shadow-sm transition-all text-opacity-60 hover:text-opacity-100 aria-pressed:ring-2 aria-pressed:ring-offset-2 aria-pressed:ring-[#00a9ce] aria-pressed:text-opacity-100"
         >
           Dark
         </button>
@@ -91,7 +99,11 @@ export default function NavBar(props: NavBarProps): JSX.Element {
 
       {/* Mobile navigation */}
       {isShowExtend ? (
-        <nav className="flex flex-col items-center gap-3 w-40 p-4 absolute top-20 right-4 bg-[#142c3f]/95 backdrop-blur-md rounded-xl shadow-xl border border-white/10 md:hidden z-50">
+        <nav
+          id="mobile-menu"
+          aria-label="Mobile navigation"
+          className="flex flex-col items-center gap-3 w-40 p-4 absolute top-20 right-4 bg-[#142c3f]/95 backdrop-blur-md rounded-xl shadow-xl border border-white/10 md:hidden z-50"
+        >
           <Button
             onClick={() => {
               setPage(0)
@@ -114,7 +126,8 @@ export default function NavBar(props: NavBarProps): JSX.Element {
             onClick={() => {
               setCurThemeMode('light')
             }}
-            className="font-mono text-xs w-full py-2 bg-[#f3f3f3] text-black rounded-md"
+            aria-pressed={lightTheme}
+            className="font-mono text-xs w-full py-2 bg-[#f3f3f3] text-black rounded-md aria-pressed:ring-2 aria-pressed:ring-offset-2 aria-pressed:ring-[#00a9ce]"
           >
             Light
           </button>
@@ -123,7 +136,8 @@ export default function NavBar(props: NavBarProps): JSX.Element {
             onClick={() => {
               setCurThemeMode('dark')
             }}
-            className="font-mono text-xs w-full py-2 bg-[#f3f3f3] text-black rounded-md"
+            aria-pressed={!lightTheme}
+            className="font-mono text-xs w-full py-2 bg-[#f3f3f3] text-black rounded-md aria-pressed:ring-2 aria-pressed:ring-offset-2 aria-pressed:ring-[#00a9ce]"
           >
             Dark
           </button>

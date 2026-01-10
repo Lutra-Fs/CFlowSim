@@ -1,21 +1,21 @@
 import Ajv, { type JSONSchemaType } from 'ajv'
+import type { Vector2 } from 'three'
 import AutoSaveService from '../services/autoSave/autoSaveService'
 import {
   createModelService,
-  modelSerialize,
   type ModelSave,
   type ModelService,
+  modelSerialize,
 } from '../services/model/modelService'
 import { createLogger } from '../utils/logger'
-import type { Vector2 } from 'three'
 import {
   type DeserializePayload,
   type InitPayload,
+  isWorkerCommand,
   type ReinitPayload,
   type UpdateForcePayload,
   type WorkerCommand,
   type WorkerEnvelope,
-  isWorkerCommand,
 } from './modelWorkerMessage'
 
 const logger = createLogger('modelWorker')
@@ -42,7 +42,10 @@ export interface ModelWorkerDeps {
   fetchJson: (path: string) => Promise<number[][][][]>
   emit: (message: WorkerEnvelope, transfer?: Transferable[]) => void
   logger: WorkerLogger
-  scheduleInterval: (fn: () => void, ms: number) => ReturnType<typeof setInterval>
+  scheduleInterval: (
+    fn: () => void,
+    ms: number,
+  ) => ReturnType<typeof setInterval>
   clearInterval: (id: ReturnType<typeof setInterval>) => void
   scheduleTimeout: (fn: () => void, ms: number) => ReturnType<typeof setTimeout>
 }
@@ -124,8 +127,7 @@ export function createModelWorkerRuntime(
     if (modelService == null)
       throw new Error('modelService is null, cannot serialize')
     const save = modelSerialize(modelUrl, modelService)
-    if (save == null)
-      throw new Error('modelSerialize returned null result')
+    if (save == null) throw new Error('modelSerialize returned null result')
     return save
   }
 
@@ -398,7 +400,10 @@ export function createModelWorkerRuntime(
         handleSerialize(command.id)
         return
       case 'deserialize':
-        await handleDeserialize(command.id, command.payload as DeserializePayload)
+        await handleDeserialize(
+          command.id,
+          command.payload as DeserializePayload,
+        )
         return
       case 'reinit':
         await handleReinit(command.id, command.payload as ReinitPayload)
@@ -430,7 +435,10 @@ const workerRuntime =
             throw new Error(`failed to fetch data from ${dataPath}`)
           }
           const contentType = response.headers.get('content-type')
-          if (contentType != null && !contentType.startsWith('application/json')) {
+          if (
+            contentType != null &&
+            !contentType.startsWith('application/json')
+          ) {
             throw new Error(`invalid content type ${contentType}`)
           }
           return (await response.json()) as number[][][][]

@@ -2,8 +2,8 @@ import * as ort from 'onnxruntime-web/webgpu'
 import type { Vector2 } from 'three'
 import { RegressionMonitor } from '@/services/regression/regressionMonitor'
 import { createLogger } from '@/utils/logger'
-import type { ModelService } from './modelService'
 import type { ModelNormalization } from './modelMeta'
+import type { ModelService } from './modelService'
 
 // Use a const that gets replaced by Vite at build time
 declare const __DEV__: boolean

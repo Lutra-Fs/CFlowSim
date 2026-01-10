@@ -8,21 +8,21 @@ import {
   useState,
 } from 'react'
 import * as THREE from 'three/webgpu'
+import type { InitDataItem } from '@/services/initData/initDataService'
 import ControlBar from '../components/ControlBar'
 import { DiffusionPlane } from '../components/DiffusionPlane'
 import ParBar from '../components/ParametersBar'
 import {
   DebugModeIndicator,
-  type PerfStats,
   PerfOverlay,
   PerfProbe,
+  type PerfStats,
 } from '../components/PerfOverlay'
 import RestorePopup from '../components/RestoreComponents/RestorePopUp'
 import { SimulationParams } from '../components/SimulationParams'
 import { resolveAssetPath } from '../utils/assetUrl'
 import { createLogger } from '../utils/logger'
 import type { ModelWorkerClient } from '../workers/workerClient'
-import type { InitDataItem } from '@/services/initData/initDataService'
 
 const logger = createLogger('HomePage')
 

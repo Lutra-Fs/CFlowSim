@@ -56,95 +56,95 @@ export default function ControlBar(props: ControlBarProps): JSX.Element {
     >
       {/* Playback Controls */}
       <div className="flex items-center gap-1">
-          <Button
-            onClick={() => {
-              if (!workerClient) return
-              workerClient.start().catch(error => {
-                console.error('Worker start failed', error)
-              })
-            }}
-            size="sm"
-            className="bg-[#00a9ce] hover:bg-[#0097b8] text-white shadow-lg shadow-cyan-900/20 px-5 rounded-xl font-medium tracking-wide transition-all hover:scale-105 active:scale-95"
-            disabled={!hasWorker}
-          >
-            Play
-          </Button>
-          <Button
-            onClick={() => {
-              if (!workerClient) return
-              workerClient.pause()
-            }}
-            size="sm"
-            variant="ghost"
-            className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
-            disabled={!hasWorker}
-          >
-            Pause
-          </Button>
-          <Button
-            onClick={() => {
-              // TODO: Implement stop functionality
-              console.log('Stop clicked')
-            }}
-            size="sm"
-            variant="ghost"
-            className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
-          >
-            Stop
-          </Button>
-          <Button
-            onClick={() => {
-              if (!workerClient) return
-              workerClient.terminate()
-            }}
-            size="sm"
-            variant="ghost"
-            className="text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-xl"
-            disabled={!hasWorker}
-          >
-            Reset
-          </Button>
+        <Button
+          onClick={() => {
+            if (!workerClient) return
+            workerClient.start().catch(error => {
+              console.error('Worker start failed', error)
+            })
+          }}
+          size="sm"
+          className="bg-[#00a9ce] hover:bg-[#0097b8] text-white shadow-lg shadow-cyan-900/20 px-5 rounded-xl font-medium tracking-wide transition-all hover:scale-105 active:scale-95"
+          disabled={!hasWorker}
+        >
+          Play
+        </Button>
+        <Button
+          onClick={() => {
+            if (!workerClient) return
+            workerClient.pause()
+          }}
+          size="sm"
+          variant="ghost"
+          className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
+          disabled={!hasWorker}
+        >
+          Pause
+        </Button>
+        <Button
+          onClick={() => {
+            // TODO: Implement stop functionality
+            console.log('Stop clicked')
+          }}
+          size="sm"
+          variant="ghost"
+          className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
+        >
+          Stop
+        </Button>
+        <Button
+          onClick={() => {
+            if (!workerClient) return
+            workerClient.terminate()
+          }}
+          size="sm"
+          variant="ghost"
+          className="text-white/60 hover:text-red-400 hover:bg-red-500/10 rounded-xl"
+          disabled={!hasWorker}
+        >
+          Reset
+        </Button>
       </div>
 
       <Separator orientation="vertical" className="bg-white/10 mx-1" />
 
       {/* Save/Restore Controls */}
-        <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1">
+        <Button
+          onClick={() => {
+            handleSave()
+          }}
+          size="sm"
+          variant="ghost"
+          className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
+          disabled={!hasWorker}
+        >
+          Save
+        </Button>
+        {import.meta.env.DEV ? (
           <Button
             onClick={() => {
-              handleSave()
+              setShowPerfOverlay(prev => !prev)
             }}
             size="sm"
             variant="ghost"
             className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
-            disabled={!hasWorker}
           >
-            Save
+            Perf {showPerfOverlay ? 'On' : 'Off'}
           </Button>
-          {import.meta.env.DEV ? (
-            <Button
-              onClick={() => {
-                setShowPerfOverlay(prev => !prev)
-              }}
-              size="sm"
-              variant="ghost"
-              className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
-            >
-              Perf {showPerfOverlay ? 'On' : 'Off'}
-            </Button>
-          ) : null}
-          <Button
-            onClick={() => {
-              if (!workerClient) return
-              setRestorePopupVisible(true)
-            }}
-            size="sm"
-            variant="ghost"
-            className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
-            disabled={!hasWorker}
-          >
-            Restore
-          </Button>
+        ) : null}
+        <Button
+          onClick={() => {
+            if (!workerClient) return
+            setRestorePopupVisible(true)
+          }}
+          size="sm"
+          variant="ghost"
+          className="text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-normal"
+          disabled={!hasWorker}
+        >
+          Restore
+        </Button>
       </div>
     </Card>
   )

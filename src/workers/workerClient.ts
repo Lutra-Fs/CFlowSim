@@ -126,8 +126,9 @@ export class ModelWorkerClient {
     }
     return new Promise((resolve, reject) => {
       this.pending.set(id, {
-        resolve:
-          resolve as (payload: CommandResponseMap[ResponseCommandName]) => void,
+        resolve: resolve as (
+          payload: CommandResponseMap[ResponseCommandName],
+        ) => void,
         reject,
       })
       this.worker.postMessage(command)
@@ -187,7 +188,9 @@ export class ModelWorkerClient {
     if (!pending) return
     this.pending.delete(message.id)
     if (message.ok) {
-      pending.resolve(message.payload as CommandResponseMap[ResponseCommandName])
+      pending.resolve(
+        message.payload as CommandResponseMap[ResponseCommandName],
+      )
       return
     }
     pending.reject(new Error(message.error.message))

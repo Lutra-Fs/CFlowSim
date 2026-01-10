@@ -1,10 +1,10 @@
 import type { Vector2 } from 'three'
-import { createLogger } from '@/utils/logger'
 import { resolveAssetPath } from '@/utils/assetUrl'
+import { createLogger } from '@/utils/logger'
 import MockModelService from './MockModelService'
+import { loadModelMeta, type ModelNormalization } from './modelMeta'
 import ONNXService from './ONNXService'
 import { TfjsService } from './TfjsService'
-import { loadModelMeta, type ModelNormalization } from './modelMeta'
 
 const logger = createLogger('modelService')
 
@@ -47,7 +47,7 @@ export async function createModelService(
   logger.debug('Model type detected', { modelType })
   const normalization: ModelNormalization | null =
     modelType === 'json' || modelType === 'onnx'
-      ? (await loadModelMeta(modelPath))?.normalization ?? null
+      ? ((await loadModelMeta(modelPath))?.normalization ?? null)
       : null
   switch (modelType) {
     case 'json':
