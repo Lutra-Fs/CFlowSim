@@ -1,10 +1,16 @@
-import { expect, vi, test } from 'vitest'
-import type { ModelSave, ModelService } from '../../src/services/model/modelService'
+import { expect, test, vi } from 'vitest'
+import type {
+  ModelSave,
+  ModelService,
+} from '../../src/services/model/modelService'
 import {
   createModelWorkerRuntime,
   type ModelWorkerDeps,
 } from '../../src/workers/modelWorker'
-import type { WorkerCommand, WorkerEnvelope } from '../../src/workers/modelWorkerMessage'
+import type {
+  WorkerCommand,
+  WorkerEnvelope,
+} from '../../src/workers/modelWorkerMessage'
 
 class FakeModelService implements ModelService {
   private outputCallback: ((data: Float32Array) => void) | null = null

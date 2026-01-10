@@ -14,11 +14,9 @@ export default function LocalFileRestore(props: RestoreProps): JSX.Element {
         console.log(e.target?.result)
         const result = e.target?.result
         if (typeof result === 'string') {
-          workerClient
-            .deserialize({ savedState: result })
-            .catch(error => {
-              console.error('Worker deserialize failed', error)
-            })
+          workerClient.deserialize({ savedState: result }).catch(error => {
+            console.error('Worker deserialize failed', error)
+          })
         }
       }
       reader.readAsText(file)

@@ -33,7 +33,8 @@ export function PerfProbe({
   useFrame((state, delta) => {
     if (!Number.isFinite(delta) || delta <= 0) return
     const fps = 1 / delta
-    const ema = emaFpsRef.current === null ? fps : emaFpsRef.current * 0.9 + fps * 0.1
+    const ema =
+      emaFpsRef.current === null ? fps : emaFpsRef.current * 0.9 + fps * 0.1
     emaFpsRef.current = ema
 
     const gl = state.gl as any
@@ -81,9 +82,7 @@ export function PerfOverlay({
       </div>
       <div className="flex justify-between gap-3">
         <span className="text-white/60">Renderer</span>
-        <span className="font-mono">
-          {snapshot?.renderer ?? '...'}
-        </span>
+        <span className="font-mono">{snapshot?.renderer ?? '...'}</span>
       </div>
       <div className="flex justify-between gap-3">
         <span className="text-white/60">FPS</span>
@@ -99,27 +98,19 @@ export function PerfOverlay({
       </div>
       <div className="flex justify-between gap-3">
         <span className="text-white/60">Draw calls</span>
-        <span className="font-mono">
-          {snapshot?.drawCalls ?? '...'}
-        </span>
+        <span className="font-mono">{snapshot?.drawCalls ?? '...'}</span>
       </div>
       <div className="flex justify-between gap-3">
         <span className="text-white/60">Triangles</span>
-        <span className="font-mono">
-          {snapshot?.triangles ?? '...'}
-        </span>
+        <span className="font-mono">{snapshot?.triangles ?? '...'}</span>
       </div>
       <div className="flex justify-between gap-3">
         <span className="text-white/60">Geometries</span>
-        <span className="font-mono">
-          {snapshot?.geometries ?? '...'}
-        </span>
+        <span className="font-mono">{snapshot?.geometries ?? '...'}</span>
       </div>
       <div className="flex justify-between gap-3">
         <span className="text-white/60">Textures</span>
-        <span className="font-mono">
-          {snapshot?.textures ?? '...'}
-        </span>
+        <span className="font-mono">{snapshot?.textures ?? '...'}</span>
       </div>
     </div>
   )

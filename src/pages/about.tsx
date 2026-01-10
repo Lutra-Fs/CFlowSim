@@ -1,6 +1,6 @@
 import type { JSX } from 'react'
-import readmeContent from '../../README.md?raw'
 import ReactMarkdown from 'react-markdown'
+import readmeContent from '../../README.md?raw'
 import { useTheme } from '../contexts/ThemeContext'
 
 export default function AboutPage(): JSX.Element {

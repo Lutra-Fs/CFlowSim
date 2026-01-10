@@ -101,7 +101,9 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     const lowColor = new t.Color(`#${lowColorHex}`)
     const highColor = new t.Color(`#${highColorHex}`)
     const lowColorUniform = uniform(vec3(lowColor.r, lowColor.g, lowColor.b))
-    const highColorUniform = uniform(vec3(highColor.r, highColor.g, highColor.b))
+    const highColorUniform = uniform(
+      vec3(highColor.r, highColor.g, highColor.b),
+    )
 
     const normalizedDensity = clamp(densityValue, 0.0, 1.0)
     return mix(lowColorUniform, highColorUniform, normalizedDensity)
@@ -121,7 +123,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     )
 
     return mix(baseColorUniform, densityColorNode, topMask)
-  }, [baseColor, baseThickness, densityColorNode, props.params.renderHeightMap])
+  }, [baseColor, densityColorNode, props.params.renderHeightMap])
 
   // Create conditional position node for height map displacement
   const positionNode = useMemo(() => {
@@ -143,7 +145,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
     return positionLocal.add(
       vec3(0, 0, densityValue.mul(heightScaleUniform).mul(topMask)),
     )
-  }, [baseThickness, densityTexture, props.params.renderHeightMap])
+  }, [densityTexture, props.params.renderHeightMap])
 
   // Subscribe to density updates from worker
   useEffect(() => {
@@ -205,8 +207,7 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
                 const interp = new Float32Array(start.length)
                 for (let k = 0; k < start.length; k++) {
                   interp[k] =
-                    start[k] +
-                    ((end[k] - start[k]) * (j + 1)) / (interpMul + 1)
+                    start[k] + ((end[k] - start[k]) * (j + 1)) / (interpMul + 1)
                 }
                 interpData.push(interp)
               }
@@ -359,10 +360,10 @@ export function DiffusionPlane(props: DiffusionPlaneProps): JSX.Element {
         onPointerUp={handlePointerUp}
       >
         <planeGeometry args={[1, 1, segments, segments]} />
-      <meshBasicNodeMaterial
-        key={`flat-${lowColorHex}-${highColorHex}`}
-        colorNode={densityColorNode}
-      />
+        <meshBasicNodeMaterial
+          key={`flat-${lowColorHex}-${highColorHex}`}
+          colorNode={densityColorNode}
+        />
       </mesh>
     </group>
   )
